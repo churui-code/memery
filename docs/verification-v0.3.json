@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-26T10:12:23.095721+08:00",
+  "version": "0.3.0",
+  "automated_tests": {
+    "command": "python3 scripts/manage.py test",
+    "passed": 96
+  },
+  "real_model_checks": {
+    "full_story_key_quotes_and_fiction_boundary": true,
+    "real_local_semantic_retrieval": true,
+    "new_session_preserves_words_actions_and_small_detail": true,
+    "real_model_forms_sourced_internal_interpretation": true,
+    "internal_interpretation_participates_in_next_answer": true,
+    "reopen_preserves_experience_and_self": true,
+    "source_deletion_revokes_derived_recall_and_self": true
+  },
+  "storage_restore_checks": {
+    "real_local_semantic_search": true,
+    "offline_save_and_semantic_search": true,
+    "offline_model_failure_preserves_storage": true,
+    "container_recreation_persistence": true,
+    "streaming_restore_preserves_experience_and_self": true,
+    "encrypted_restore_replays_later_deletion": true,
+    "tampered_backup_rejected_without_service_loss": true,
+    "synthetic_online_data_cleaned": true
+  },
+  "deployment": {
+    "healthy": true,
+    "backup_before_upgrade": true,
+    "migration": "v1/v2 to v3, existing data retained"
+  },
+  "limits": [
+    "internal states do not prove subjective experience",
+    "development is triggered by dialogue",
+    "recall is bounded and may miss relevant evidence"
+  ]
+}

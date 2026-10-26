@@ -40,7 +40,7 @@ class DeletionJournal:
                 raise ValueError('incomplete_record')
             records = [json.loads(line) for line in raw.splitlines() if line]
             for r in records:
-                if r['target_type'] not in {'memory','conversation','expiry'}:
+                if r['target_type'] not in {'memory','conversation','expiry','experience','self'}:
                     raise ValueError('invalid_target')
                 datetime.fromisoformat(r['deleted_at'])
             return records

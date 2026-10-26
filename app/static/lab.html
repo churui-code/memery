@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>记忆实验台</title><link rel="stylesheet" href="/lab-assets/lab.css">
+</head>
+<body>
+<header><div><span class="eyebrow">MEMORY LAB · v0.4</span><h1>让记忆的变化看得见</h1><p>独立合成实验 · 时间、线索、回忆和情绪</p></div><span id="connection" class="badge">未连接</span></header>
+<main>
+  <section id="login" class="panel login">
+    <h2>连接本地实验服务</h2><p>输入实验台的独立令牌。令牌仅留在当前页面内存，刷新后需要重新输入。</p>
+    <form id="login-form"><label>实验令牌<input id="token" type="password" autocomplete="off" required placeholder="data/lab/secrets/api_token"></label><button type="submit">连接实验台</button></form>
+    <p class="muted">这里只使用合成场景，不提供生产记忆导入。</p>
+  </section>
+  <div id="workspace" hidden>
+    <section class="toolbar panel"><label class="grow">当前实验<select id="experiments"></select></label><button id="refresh">刷新</button><button id="remove" class="danger">删除实验</button><button id="disconnect">断开连接</button></section>
+    <details class="panel setup"><summary>复制快照，比较策略或模型</summary><div class="form-row"><label>复制时的策略<select id="clone-policy"><option value="">保持当前策略</option><option value="balanced">均衡 v1</option><option value="strict">谨慎 v1</option></select></label><label>复制时的模型<select id="clone-model"><option value="">保持当前模型</option><option value="mock">模拟模型</option><option value="live">真实 MiniMax</option></select></label><label>复制时的向量<select id="clone-embedding"><option value="">保持当前向量</option><option value="fake">固定词面向量</option><option value="local">本地 BGE</option></select></label><button id="clone">复制快照对照</button></div><p class="muted">数据和时间保持相同；切换向量实现时会重新建立实验索引。</p></details>
+    <details class="panel setup" open><summary>创建一个合成实验</summary><form id="create-form" class="form-row">
+      <label>名称<input id="name" value="我的记忆实验" maxlength="100" required></label>
+      <label>合成场景<select id="scenario"></select></label>
+      <label>生成模型<select id="model"><option value="mock">模拟 · 不调用云端</option><option value="live">真实 MiniMax · 每轮最多3次</option></select></label>
+      <label>检索向量<select id="embedding"><option value="fake">固定词面向量 · 流程测试</option><option value="local">本地 BGE · 语义测试</option></select></label>
+      <label>回忆策略<select id="policy"><option value="balanced">均衡 v1 · 默认</option><option value="strict">谨慎 v1 · 提高自然唤醒门槛</option></select></label><button type="submit">创建实验</button>
+    </form></details>
+    <div id="empty" class="panel empty">先创建一个实验，观察一段经历如何沉淀，以及怎样被线索唤醒。</div>
+    <div id="experiment" hidden>
+      <section class="clockbar panel"><div><span class="eyebrow">逻辑时间</span><strong id="clock"></strong><span id="meta" class="muted"></span></div><div class="buttons"><button data-days="1">推进1天</button><button data-days="30">推进30天</button><button data-days="365">推进1年</button><form id="advance-form"><input id="advance-days" type="number" min="0" max="36500" value="7" aria-label="推进天数"><button>推进天数</button></form></div></section>
+      <div class="columns">
+        <section class="panel timeline"><div class="section-title"><h2>经历与内在状态</h2><span id="count" class="badge"></span></div><p class="muted">原文长期保留；回忆的清晰度由当前线索与时间决定。</p><div id="events"></div>
+          <details><summary>情绪与观点历史</summary><div id="states"></div></details>
+          <details><summary>加入合成事件</summary><form id="event-form"><label>标题<input id="event-title" maxlength="200" required></label><label>合成事件正文<textarea id="event-text" rows="5" maxlength="8000" required placeholder="请写虚构的人物与经历"></textarea></label><div class="form-row"><label>重要性<input id="importance" type="number" min="0" max="1" step=".05" value=".2"></label><label>情绪意义<input id="salience" type="number" min="0" max="1" step=".05" value="0"></label></div><label>编码方式<select id="encoding"><option value="fixture">预编码夹具 · 可控的重要性</option><option value="model">完整对话编码 · 使用当前模型</option></select></label><label class="check"><input id="event-synthetic" type="checkbox" required>我确认这是合成测试内容</label><button>加入事件</button></form></details>
+        </section>
+        <section class="panel query"><h2>给记忆一个线索</h2><div class="chips"><button data-query="紫藤戒指">独特线索</button><button data-query="林舟和阿遥在星河公园买小吃花了多少钱？">追问金额</button><button data-query="那次佩戴指环表达爱意的故事">语义改写</button></div>
+          <form id="query-form"><label>当前问题<textarea id="query" rows="6" maxlength="8000" required>紫藤戒指</textarea></label><div class="form-row"><label>模式<select id="action"><option value="probe">只看会想起什么 · 不写入</option><option value="chat">实际对话 · 形成新经历</option></select></label><label>回忆方式<select id="recall-mode"><option value="natural">自然回忆</option><option value="deep">主动查找</option></select></label></div><label>上下文预算（留空使用默认，仅预览）<input id="budget" type="number" min="1000" max="100000" placeholder="默认24000 tokens"></label><label class="check"><input id="chat-synthetic" type="checkbox" checked>输入只涉及合成测试内容</label><button class="primary" type="submit" id="query-submit">查看回忆</button></form>
+          <div id="answer" class="answer" hidden></div><div id="usage" class="muted"></div>
+        </section>
+        <section class="panel inspection"><div class="section-title"><h2>这次为什么想起</h2><button id="download-preview" disabled>下载JSON</button></div><div class="tabs" role="tablist"><button class="active" data-tab="recall">召回解释</button><button data-tab="context">实际上下文</button><button data-tab="raw">完整响应</button></div><div id="inspect-empty" class="muted empty">提交线索后，这里显示候选、分数、展开层级、来源和预算。</div><div id="recall" class="tab-content"></div><pre id="context" class="tab-content" hidden></pre><pre id="raw" class="tab-content" hidden></pre></section>
+      </div>
+      <section class="panel reports"><div class="section-title"><div><h2>跨时间对照实验</h2><p class="muted">每一步从相同快照开始，避免前面的测试答案影响后面的测试。模拟结果只证明流程，不证明语义或情感质量。</p></div><button id="download-report" disabled>下载报告</button></div><form id="run-form" class="form-row"><label>时间点（天，逗号分隔）<input id="run-days" value="0,30,365,1825" required></label><label>测试方式<select id="run-mode"><option value="probe">只读回忆 · 无云调用</option><option value="chat">完整对话 · 使用当前模型</option></select></label><label>完整重复轮数<select id="run-repeats"><option value="1">1轮</option><option value="3">3轮，全部保留</option></select></label><button>运行场景集</button></form><p id="run-status" class="muted">还没有运行报告。</p><div class="table-wrap"><table id="run-table" hidden><thead><tr><th>用例 / 天数</th><th>候选含目标来源</th><th>回答原话检查</th><th>耗时 / 云调用</th><th>结果</th></tr></thead><tbody></tbody></table></div><details><summary>完整报告与逐步上下文</summary><pre id="report-raw"></pre></details></section>
+    </div>
+  </div>
+</main><div id="notice" role="status" aria-live="polite" hidden></div><footer>记忆实验台 · 原文、回忆、情绪分别观察 · 情绪数值是模型内部状态描述</footer>
+<script src="/lab-assets/lab.js" defer></script>
+</body></html>

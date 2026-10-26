@@ -1,0 +1,81 @@
+{
+  "finished_at": "2026-10-26T09:22:41.777181+00:00",
+  "image_id": "sha256:b9faa58846bcff264848460b9c23289c35554d21006c4d7dc0f061ca5959b1eb",
+  "pre_upgrade": {
+    "schema_version": 3,
+    "original_rows": 0,
+    "original_archive_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "post_upgrade": {
+    "schema_version": 5,
+    "original_rows": 0,
+    "original_archive_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "backup": "data/backups/memory-20261026-170805-86d1f9.hmem",
+  "original_backup": "data/backups/memory-20261026-113114-55a265.hmem",
+  "health": {
+    "8765": {
+      "database": "ok",
+      "version": "0.4.0",
+      "automatic_memory": true,
+      "memories": 0,
+      "episodes": 0,
+      "episode_index_jobs": {},
+      "experiences": 0,
+      "experience_retention": "until_deleted",
+      "experience_index_jobs": {},
+      "index_jobs": {},
+      "model": "MiniMax-M3"
+    },
+    "8766": {
+      "database": "ok",
+      "version": "0.4.0",
+      "automatic_memory": true,
+      "memories": 0,
+      "episodes": 0,
+      "episode_index_jobs": {},
+      "experiences": 0,
+      "experience_retention": "until_deleted",
+      "experience_index_jobs": {},
+      "index_jobs": {},
+      "model": "MiniMax-M3"
+    }
+  },
+  "checks": {
+    "migration_to_schema_5": true,
+    "original_rows_unchanged": true,
+    "original_archive_hash_unchanged": true,
+    "health_8765": true,
+    "health_8766": true,
+    "production_lab_unregistered": true,
+    "lab_production_chat_disabled": true,
+    "distinct_tokens": true,
+    "lab_rejects_production_token": true,
+    "production_rejects_lab_token": true,
+    "production_episode_listing": true,
+    "production_readonly_recall": true,
+    "lab_advance": true,
+    "lab_probe_readonly": true,
+    "lab_mock_chat_run_actual_context": true,
+    "lab_mock_no_cloud_calls": true,
+    "smoke_experiment_deleted": true,
+    "smoke_experiment_gone": true
+  },
+  "lab_http_smoke": {
+    "status": "completed",
+    "steps": 4,
+    "completed": 4,
+    "failed_steps": 0,
+    "cloud_calls": 0,
+    "metrics": {
+      "candidate_hit_count": 4,
+      "selected_hit_count": 4,
+      "expected_quote_count": 5,
+      "context_quote_hit_count": 5,
+      "elapsed_ms_p50": 59.56,
+      "elapsed_ms_p95": 70.11,
+      "steps": 4
+    }
+  },
+  "passed": true
+}

@@ -10,9 +10,9 @@ from conftest import FakeEmbeddings
 
 
 def test_provider_timeout(monkeypatch):
-    original=httpx.Client
+    original=httpx.AsyncClient
     def timeout(request):raise httpx.ReadTimeout('synthetic timeout',request=request)
-    monkeypatch.setattr(httpx,'Client',lambda **kwargs:original(transport=httpx.MockTransport(timeout),**kwargs))
+    monkeypatch.setattr(httpx,'AsyncClient',lambda **kwargs:original(transport=httpx.MockTransport(timeout),**kwargs))
     with pytest.raises(MemoryError) as e:
         MiniMax(replace(Settings(),model_key='dummy')).chat('system',[{'role':'user','content':'test'}])
     assert e.value.code=='model_timeout'

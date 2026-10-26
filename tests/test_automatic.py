@@ -173,9 +173,16 @@ def test_automatic_write_rejects_concurrent_delete(repo,model):
 def test_upgrade_existing_v1_data_is_repeatable(repo):
     saved=repo.remember({'text':'迁移前的原话'})[0]
     with repo.pool.connection() as c:
+        c.execute('ALTER TABLE messages DROP COLUMN experience_id')
+        for table in ('episode_details','episode_cues','episode_evidence','episode_versions',
+                      'episode_associations','episode_rehearsals','episode_chunks','episode_jobs','episodes'):
+            c.execute(sql.SQL('DROP TABLE {}').format(sql.Identifier(table)))
+        c.execute('ALTER TABLE model_calls DROP COLUMN phase,DROP COLUMN source_refs,DROP COLUMN estimated_input_tokens,DROP COLUMN policy_version,DROP COLUMN estimator_version')
+        for table in ('context_links','self_observations','experience_jobs','experience_chunks','experiences'):
+            c.execute(sql.SQL('DROP TABLE {}').format(sql.Identifier(table)))
         c.execute('DROP TABLE memory_evidence')
         c.execute('ALTER TABLE memories DROP COLUMN origin, DROP COLUMN kind')
-        c.execute('DELETE FROM schema_migrations WHERE version=2')
+        c.execute('DELETE FROM schema_migrations WHERE version>=2')
     repo.migrate();repo.migrate()
     assert repo.get(saved['id'])['text']=='迁移前的原话'
     assert repo.get(saved['id'])['origin']=='manual'

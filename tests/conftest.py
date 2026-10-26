@@ -27,10 +27,18 @@ class FakeModel:
         self.error=None
         self.decision={'actions':[]}
         self.decision_requests=[]
+        self.reassessment_requests=[]
+        self.reassessment=None
 
     def decide_memories(self,system,prompt):
         self.decision_requests.append(prompt)
         return {'decision':self.decision,'usage':{}}
+
+    def reassess_memories(self,system,prompt):
+        self.reassessment_requests.append(prompt)
+        value=self.reassessment if self.reassessment is not None else {key:value for key,value in self.decision.items()
+            if key in ('experience','episodes','self_updates','rehearsals')}
+        return {'decision':value,'usage':{}}
 
     def chat(self,system,messages):
         self.requests.append(messages)

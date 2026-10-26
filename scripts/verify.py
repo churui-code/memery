@@ -25,7 +25,7 @@ def request(method,path,data=None):
         data=json.dumps(data,ensure_ascii=False).encode() if data is not None else None,
         headers={'Authorization':'Bearer '+token,'Content-Type':'application/json'},method=method)
     try:
-        with urllib.request.urlopen(req,timeout=210) as response:return response.status,json.load(response)
+        with urllib.request.urlopen(req,timeout=300) as response:return response.status,json.load(response)
     except urllib.error.HTTPError as exc:return exc.code,json.loads(exc.read())
 
 
@@ -108,6 +108,25 @@ def main():
         assert status==201,item
         mid=item['id'];created.append(mid)
         wait_index(mid)
+        life_script='''
+import json
+from uuid import UUID,uuid4
+from app.config import Settings
+from app.life import SelfUpdate
+from app.repository import Repository
+repo=Repository(Settings())
+try:
+ text='合成验收：讨论紫藤故事，形成关于承诺的观点。'
+ result=repo.save_answer(uuid4(),text,'合成回答：承诺要通过行动体现。',[UUID(MEMORY_ID)],repo.epoch(),
+     self_updates=[SelfUpdate(domain='belief',key='合成验收观点',text='承诺通过行动体现',
+         reason='来自合成验收讨论',quote=text,confidence=.9)])
+ print(json.dumps({'experience_id':str(result['experience_id']),'self_id':str(result['self_changes'][0]['id']),'episode_id':str(result['episode_ids'][0])}))
+finally:repo.close()
+'''.replace('MEMORY_ID',repr(mid))
+        life_result=manage.run(['exec','-T','api','python','-'],input=life_script.encode(),stdout=subprocess.PIPE)
+        life=json.loads(life_result.stdout)
+        assert request('GET','/v1/experiences/'+life['experience_id'])[0]==200
+        assert request('GET','/v1/episodes/'+life['episode_id'])[0]==200
         _,search=request('POST','/v1/search',{'query':'晚上睡觉冷气调几摄氏度比较合我心意？'})
         assert any(hit['id']==mid and 'semantic' in hit['methods'] for hit in search['items']),search
         report['checks']['real_local_semantic_search']=True
@@ -131,10 +150,18 @@ def main():
         assert request('GET','/v1/memories/'+mid)[0]==200
         report['checks']['container_recreation_persistence']=True
         backup=manage.backup()
+        manage.restore(backup)
+        assert request('GET','/v1/experiences/'+life['experience_id'])[1]['user_text'].startswith('合成验收')
+        assert any(state['id']==life['self_id'] for state in request('GET','/v1/self')[1]['states'])
+        assert request('GET','/v1/episodes/'+life['episode_id'])[0]==200
+        report['checks']['streaming_restore_preserves_experience_episode_and_self']=True
         assert request('DELETE','/v1/memories/'+mid)[0]==200
         assert request('GET','/v1/memories/'+mid)[0]==404
         manage.restore(backup)
         assert request('GET','/v1/memories/'+mid)[0]==404
+        assert request('GET','/v1/experiences/'+life['experience_id'])[0]==404
+        assert request('GET','/v1/episodes/'+life['episode_id'])[0]==404
+        assert not any(state['id']==life['self_id'] for state in request('GET','/v1/self')[1]['states'])
         report['checks']['encrypted_restore_replays_later_deletion']=True
 
         # Tampering must fail before stopping/replacing the live database.
@@ -142,7 +169,7 @@ def main():
         body=bytearray(backup.read_bytes());body[-1]^=1;tampered.write_bytes(body)
         try:
             try:manage.restore(tampered)
-            except subprocess.CalledProcessError:pass
+            except (subprocess.CalledProcessError,RuntimeError):pass
             else:raise AssertionError('tampered backup accepted')
             assert request('GET','/health')[0]==200
             report['checks']['tampered_backup_rejected_without_service_loss']=True

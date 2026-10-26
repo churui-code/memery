@@ -28,11 +28,22 @@ class Settings:
     deletion_journal: str = field(default_factory=lambda: os.getenv("DELETION_JOURNAL", "/data/journal/deletions.jsonl"))
     history_days: int = field(default_factory=lambda: int(os.getenv("HISTORY_DAYS", "30")))
     min_similarity: float = 0.55
+    experience_min_similarity: float = field(default_factory=lambda: float(os.getenv('EXPERIENCE_MIN_SIMILARITY','0.42')))
+    context_budget_tokens: int = field(default_factory=lambda: int(os.getenv('CONTEXT_BUDGET_TOKENS', '24000')))
+    chat_deadline_seconds: float = field(default_factory=lambda: float(os.getenv('CHAT_DEADLINE_SECONDS', '240')))
+    lab_enabled: bool = field(default_factory=lambda: os.getenv('MEMORY_LAB', 'false').lower() == 'true')
+    lab_data_dir: str = field(default_factory=lambda: os.getenv('LAB_DATA_DIR', '/data/lab'))
 
     def __post_init__(self):
         if not 1 <= self.history_days <= 36500:
             raise ValueError('HISTORY_DAYS 必须为 1 到 36500 天。')
+        if not 0<=self.experience_min_similarity<=1:
+            raise ValueError('EXPERIENCE_MIN_SIMILARITY 必须为 0 到 1。')
         if not 1 <= self.model_timeout <= 600:
             raise ValueError('MODEL_TIMEOUT_SECONDS 必须为 1 到 600 秒。')
+        if not 1000 <= self.context_budget_tokens <= 100000:
+            raise ValueError('CONTEXT_BUDGET_TOKENS 必须为 1000 到 100000。')
+        if not 1 <= self.chat_deadline_seconds <= 600:
+            raise ValueError('CHAT_DEADLINE_SECONDS 必须为 1 到 600 秒。')
         if self.model_name != 'MiniMax-M3':
-            raise ValueError('v0.1 固定使用 MiniMax-M3。')
+            raise ValueError('当前模型适配器使用 MiniMax-M3。')

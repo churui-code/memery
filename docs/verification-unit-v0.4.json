@@ -1,0 +1,13 @@
+{
+  "finished_at": "2026-10-26T09:15:05.091518+00:00",
+  "command": "docker compose run --rm -T --no-deps api python -m pytest -q",
+  "image_id": "sha256:b9faa58846bcff264848460b9c23289c35554d21006c4d7dc0f061ca5959b1eb",
+  "passed": true,
+  "passed_tests": 295,
+  "failed_tests": 0,
+  "seconds": 44.04,
+  "warnings": [
+    "Starlette TestClient httpx deprecation; no test failures"
+  ],
+  "scope": "Full pytest suite against isolated PostgreSQL schemas, fake provider/embedding for deterministic cases."
+}

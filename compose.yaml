@@ -1,7 +1,7 @@
 name: home-memory
 
 x-app: &app
-  image: home-memory:0.2
+  image: home-memory:0.4
   build: .
   init: true
   restart: unless-stopped
@@ -17,6 +17,9 @@ x-app: &app
     MINIMAX_THINKING: ${MINIMAX_THINKING:-disabled}
     MODEL_TIMEOUT_SECONDS: 90
     HISTORY_DAYS: ${HISTORY_DAYS:-30}
+    EXPERIENCE_MIN_SIMILARITY: ${EXPERIENCE_MIN_SIMILARITY:-0.42}
+    CONTEXT_BUDGET_TOKENS: ${CONTEXT_BUDGET_TOKENS:-24000}
+    CHAT_DEADLINE_SECONDS: ${CHAT_DEADLINE_SECONDS:-240}
     EMBEDDING_MODEL: BAAI/bge-small-zh-v1.5
     MODEL_CACHE: /data/models
     DELETION_JOURNAL: /data/journal/deletions.jsonl

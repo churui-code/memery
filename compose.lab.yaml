@@ -1,0 +1,61 @@
+name: home-memory-lab
+services:
+  db:
+    image: pgvector/pgvector:pg16@sha256:ccc6e83d6e35e931dc7c5def2022729d5a6c370318d099181995567ff1fb4d6b
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: memory_lab
+      POSTGRES_USER: memory_lab
+      POSTGRES_PASSWORD_FILE: /run/secrets/lab_db_password
+    volumes:
+      - ./data/lab/postgres:/var/lib/postgresql/data
+    secrets: [lab_db_password]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U memory_lab -d memory_lab]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  api:
+    image: home-memory:0.4
+    build: .
+    init: true
+    restart: unless-stopped
+    ports: ['127.0.0.1:8766:8000']
+    environment:
+      DB_HOST: db
+      DB_NAME: memory_lab
+      DB_USER: memory_lab
+      DB_PASSWORD_FILE: /run/secrets/lab_db_password
+      API_TOKEN_FILE: /run/secrets/lab_api_token
+      MINIMAX_API_KEY_FILE: /run/secrets/minimax_api_key
+      MINIMAX_BASE_URL: ${MINIMAX_BASE_URL:-https://api.minimaxi.com/anthropic}
+      MINIMAX_MODEL: MiniMax-M3
+      MODEL_TIMEOUT_SECONDS: 90
+      MODEL_CACHE: /data/models
+      DELETION_JOURNAL: /data/lab/service-journal.jsonl
+      MEMORY_LAB: 'true'
+      LAB_DATA_DIR: /data/lab
+      TZ: Asia/Shanghai
+      TOKENIZERS_PARALLELISM: 'false'
+      HF_HUB_OFFLINE: '1'
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      DO_NOT_TRACK: '1'
+    volumes:
+      - ./data/lab/runtime:/data/lab
+      - ./data/models:/data/models:ro
+    secrets: [lab_db_password, lab_api_token, minimax_api_key]
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+secrets:
+  lab_db_password:
+    file: ./data/lab/secrets/db_password
+  lab_api_token:
+    file: ./data/lab/secrets/api_token
+  minimax_api_key:
+    file: ./.secrets/minimax_api_key

@@ -7,6 +7,7 @@ import subprocess
 import sys
 import urllib.error
 import urllib.request
+import urllib.parse
 from uuid import uuid4
 
 ROOT=Path(__file__).resolve().parent
@@ -22,14 +23,14 @@ def call(method,path,data=None,headers=None):
     req=urllib.request.Request(base+path,data=json.dumps(data,ensure_ascii=False).encode() if data is not None else None,
         headers={'Authorization':'Bearer '+token,'Content-Type':'application/json',**(headers or {})},method=method)
     try:
-        with urllib.request.urlopen(req,timeout=210) as response: return json.load(response)
+        with urllib.request.urlopen(req,timeout=300) as response: return json.load(response)
     except urllib.error.HTTPError as exc:
         body=json.loads(exc.read())
         raise RuntimeError(json.dumps(body,ensure_ascii=False)) from exc
 
 
 def main():
-    parser=argparse.ArgumentParser(description='家庭 AI 本地记忆')
+    parser=argparse.ArgumentParser(description='持续自我与长期经历记忆')
     subs=parser.add_subparsers(dest='command',required=True)
     p=subs.add_parser('remember');p.add_argument('text');p.add_argument('--local-only',action='store_true');p.add_argument('--subject',default='user');p.add_argument('--until');p.add_argument('--key')
     p=subs.add_parser('list');p.add_argument('--limit',type=int,default=20);p.add_argument('--offset',type=int,default=0)
@@ -38,13 +39,24 @@ def main():
     p=subs.add_parser('correct');p.add_argument('id');p.add_argument('text');p.add_argument('--revision',type=int)
     p=subs.add_parser('forget');p.add_argument('id')
     p=subs.add_parser('reindex');p.add_argument('id')
-    p=subs.add_parser('chat');p.add_argument('text',nargs='?');p.add_argument('--conversation');p.add_argument('--no-auto-memory',action='store_true')
+    p=subs.add_parser('chat');p.add_argument('text',nargs='?');p.add_argument('--conversation');p.add_argument('--no-auto-memory',action='store_true');p.add_argument('--recall-mode',choices=['natural','deep'],default='natural')
+    p=subs.add_parser('recall');p.add_argument('query');p.add_argument('--conversation');p.add_argument('--recall-mode',choices=['natural','deep'],default='natural');p.add_argument('--budget',type=int)
+    p=subs.add_parser('episodes');p.add_argument('--limit',type=int,default=50);p.add_argument('--offset',type=int,default=0)
+    p=subs.add_parser('episode');p.add_argument('id')
+    p=subs.add_parser('lab');p.add_argument('action',choices=['up','down','status','open','token-path'],default='status',nargs='?')
     p=subs.add_parser('history');p.add_argument('id')
     p=subs.add_parser('clear-history');p.add_argument('id')
+    p=subs.add_parser('experiences');p.add_argument('query',nargs='?',default='');p.add_argument('--after');p.add_argument('--before');p.add_argument('--time-basis',choices=['recorded_at','occurred_at'],default='recorded_at');p.add_argument('--include-stale',action='store_true');p.add_argument('--limit',type=int,default=8)
+    p=subs.add_parser('experience');p.add_argument('id')
+    p=subs.add_parser('forget-experience');p.add_argument('id')
+    p=subs.add_parser('self');p.add_argument('--history',action='store_true');p.add_argument('--domain');p.add_argument('--key')
+    p=subs.add_parser('forget-self');p.add_argument('id')
     subs.add_parser('backup')
     p=subs.add_parser('restore');p.add_argument('file')
     args=parser.parse_args()
     command=args.command
+    if command=='lab':
+        return subprocess.call([sys.executable,str(ROOT/'scripts/lab.py'),args.action])
     if command in ('backup','restore'):
         return subprocess.call([sys.executable,str(ROOT/'scripts/manage.py'),command]+([args.file] if command=='restore' else []))
     if command=='remember':
@@ -54,6 +66,10 @@ def main():
     elif command=='list': result=call('GET',f'/v1/memories?limit={args.limit}&offset={args.offset}')
     elif command=='show': result=call('GET','/v1/memories/'+args.id+('?history=true' if args.history else ''))
     elif command=='search': result=call('POST','/v1/search',{'query':args.query})
+    elif command=='recall':
+        result=call('POST','/v1/recall/preview',{'query':args.query,'conversation_id':args.conversation,'recall_mode':args.recall_mode,'budget':args.budget})
+    elif command=='episodes': result=call('GET',f'/v1/episodes?limit={args.limit}&offset={args.offset}')
+    elif command=='episode': result=call('GET','/v1/episodes/'+args.id)
     elif command=='correct':
         revision=args.revision or call('GET','/v1/memories/'+args.id)['revision']
         result=call('PATCH','/v1/memories/'+args.id,{'expected_revision':revision,'text':args.text})
@@ -61,8 +77,21 @@ def main():
     elif command=='reindex': result=call('POST','/v1/memories/'+args.id+'/reindex')
     elif command=='history': result=call('GET','/v1/conversations/'+args.id)
     elif command=='clear-history': result=call('DELETE','/v1/conversations/'+args.id)
+    elif command=='experiences':
+        data={'query':args.query,'time_basis':args.time_basis,'include_stale':args.include_stale,'limit':args.limit}
+        if args.after:data['after']=args.after
+        if args.before:data['before']=args.before
+        result=call('POST','/v1/experiences/search',data)
+    elif command=='experience':result=call('GET','/v1/experiences/'+args.id)
+    elif command=='forget-experience':result=call('DELETE','/v1/experiences/'+args.id)
+    elif command=='self':
+        path='/v1/self/history' if args.history else '/v1/self'
+        filters={k:v for k,v in [('domain',args.domain),('key',args.key)] if v}
+        if filters and not args.history:raise RuntimeError('--domain 和 --key 需配合 --history')
+        result=call('GET',path+('?' + urllib.parse.urlencode(filters) if filters else ''))
+    elif command=='forget-self':result=call('DELETE','/v1/self/'+args.id)
     elif args.text:
-        data={'text':args.text,'auto_memory':not args.no_auto_memory}
+        data={'text':args.text,'auto_memory':not args.no_auto_memory,'recall_mode':args.recall_mode}
         if args.conversation: data['conversation_id']=args.conversation
         result=call('POST','/v1/chat',data)
     else:
@@ -75,7 +104,7 @@ def main():
             if text=='/new': conversation=None;continue
             if not text: continue
             try:
-                data={'text':text,'auto_memory':not args.no_auto_memory}
+                data={'text':text,'auto_memory':not args.no_auto_memory,'recall_mode':args.recall_mode}
                 if conversation: data['conversation_id']=conversation
                 result=call('POST','/v1/chat',data)
                 conversation=result['conversation_id']
