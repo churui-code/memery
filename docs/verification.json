@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-23T18:09:40.162835+08:00",
+  "project": "home-memory-qa",
+  "checks": {
+    "real_local_semantic_search": true,
+    "offline_save_and_semantic_search": true,
+    "offline_model_failure_preserves_storage": true,
+    "container_recreation_persistence": true,
+    "encrypted_restore_replays_later_deletion": true,
+    "tampered_backup_rejected_without_service_loss": true,
+    "synthetic_online_data_cleaned": true
+  },
+  "model_calls": [],
+  "passed": true
+}

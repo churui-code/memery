@@ -1,0 +1,96 @@
+name: home-memory
+
+x-app: &app
+  image: home-memory:0.2
+  build: .
+  init: true
+  restart: unless-stopped
+  environment: &app-env
+    DB_HOST: db
+    DB_NAME: memory
+    DB_USER: memory_app
+    DB_PASSWORD_FILE: /run/secrets/db_app_password
+    API_TOKEN_FILE: /run/secrets/api_token
+    MINIMAX_API_KEY_FILE: /run/secrets/minimax_api_key
+    MINIMAX_BASE_URL: ${MINIMAX_BASE_URL:-https://api.minimaxi.com/anthropic}
+    MINIMAX_MODEL: MiniMax-M3
+    MINIMAX_THINKING: ${MINIMAX_THINKING:-disabled}
+    MODEL_TIMEOUT_SECONDS: 90
+    HISTORY_DAYS: ${HISTORY_DAYS:-30}
+    EMBEDDING_MODEL: BAAI/bge-small-zh-v1.5
+    MODEL_CACHE: /data/models
+    DELETION_JOURNAL: /data/journal/deletions.jsonl
+    BACKUP_KEY_FILE: /run/secrets/backup_key
+    TOKENIZERS_PARALLELISM: "false"
+    HF_HUB_DISABLE_TELEMETRY: "1"
+    HF_HUB_DISABLE_XET: "1"
+    DO_NOT_TRACK: "1"
+    TZ: Asia/Shanghai
+  volumes:
+    - ${MEMORY_MODEL_DIR:-./data/models}:/data/models
+    - ${MEMORY_DATA_DIR:-./data}/journal:/data/journal
+    - ${MEMORY_DATA_DIR:-./data}/backups:/data/backups
+  secrets:
+    - db_app_password
+    - api_token
+    - minimax_api_key
+    - backup_key
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  db:
+    image: pgvector/pgvector:pg16@sha256:ccc6e83d6e35e931dc7c5def2022729d5a6c370318d099181995567ff1fb4d6b
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: memory
+      POSTGRES_USER: memory_admin
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
+      TZ: Asia/Shanghai
+    secrets:
+      - db_admin_password
+    volumes:
+      - ${MEMORY_DATA_DIR:-./data}/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U memory_admin -d memory"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    stop_grace_period: 30s
+
+  api:
+    <<: *app
+    ports:
+      - "127.0.0.1:${MEMORY_PORT:-8765}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  worker:
+    <<: *app
+    command: ["python", "-m", "app.worker"]
+
+  tests:
+    <<: *app
+    profiles: ["test"]
+    restart: "no"
+    command: ["python", "-m", "pytest", "-q", "tests"]
+    environment:
+      <<: *app-env
+      DELETION_JOURNAL: /tmp/home-memory-tests/deletions.jsonl
+
+secrets:
+  db_admin_password:
+    file: ./.secrets/db_admin_password
+  db_app_password:
+    file: ./.secrets/db_app_password
+  api_token:
+    file: ./.secrets/api_token
+  minimax_api_key:
+    file: ./.secrets/minimax_api_key
+  backup_key:
+    file: ./.secrets/backup_key

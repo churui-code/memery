@@ -1,0 +1,163 @@
+{
+  "date": "2026-10-23T18:06:00.970306+08:00",
+  "project": "home-memory-qa",
+  "checks": {
+    "unprompted_preference_and_provenance": true,
+    "semantic_duplicate_no_write": true,
+    "new_session_recall": true,
+    "natural_correction_updates_same_record": true,
+    "natural_forgetting_no_resurrection": true,
+    "questions_hypotheses_quotes_not_facts": true,
+    "temporary_expiry_and_correct_person": true,
+    "restart_does_not_resurrect": true
+  },
+  "dialogue": [
+    {
+      "text": "我平时睡觉喜欢把卧室空调调到26度。",
+      "answer": "记住了：你平时睡觉时习惯把卧室空调调到 26℃。",
+      "changes": [
+        {
+          "operation": "create",
+          "id": "ab497fa5-9161-4d25-b8c8-9a5c6fe60092",
+          "revision": 1,
+          "text": "用户平时睡觉时习惯把卧室空调调到26度。",
+          "kind": "preference",
+          "valid_until": null
+        }
+      ],
+      "seconds": 5.89
+    },
+    {
+      "text": "对，我平时睡觉就是喜欢卧室空调26度。",
+      "answer": "好的，记住了。你平时睡觉时喜欢把卧室空调调到 26℃。[ab497fa5]",
+      "changes": [],
+      "seconds": 7.52
+    },
+    {
+      "text": "你记得我入睡时冷气调到几摄氏度比较合适吗？",
+      "answer": "记得，你平时入睡时习惯把卧室空调调到 **26℃**。[记忆ID: ab497fa5]",
+      "changes": [],
+      "seconds": 4.69
+    },
+    {
+      "text": "我现在睡觉改为28度了，之前26度不合适。",
+      "answer": "好的，记住了：你睡觉时习惯把卧室空调调到 **28度**，觉得 **26度不合适**。",
+      "changes": [
+        {
+          "operation": "update",
+          "id": "ab497fa5-9161-4d25-b8c8-9a5c6fe60092",
+          "revision": 2,
+          "text": "用户睡觉时习惯把卧室空调调到28度，认为26度不合适。",
+          "kind": "preference",
+          "valid_until": null
+        }
+      ],
+      "seconds": 5.47
+    },
+    {
+      "text": "请忘掉我睡觉时的卧室空调温度偏好。",
+      "answer": "好的，已忘掉你睡觉时的卧室空调温度偏好。",
+      "changes": [
+        {
+          "operation": "forget",
+          "id": "ab497fa5-9161-4d25-b8c8-9a5c6fe60092"
+        }
+      ],
+      "seconds": 5.53
+    },
+    {
+      "text": "你还记得我睡觉喜欢的卧室空调温度吗？",
+      "answer": "我还不记得你睡觉时喜欢的卧室空调温度。你通常喜欢设在多少度？",
+      "changes": [],
+      "seconds": 3.85
+    }
+  ],
+  "decision_cases": [
+    {
+      "case": "question",
+      "decision": {
+        "actions": [],
+        "clarification": null
+      }
+    },
+    {
+      "case": "hypothetical",
+      "decision": {
+        "actions": [],
+        "clarification": "这是假设性提问，不清楚你是否真的不吃香菜——需要确认你是否有忌口吗？"
+      }
+    },
+    {
+      "case": "quotation",
+      "decision": {
+        "actions": [],
+        "clarification": null
+      }
+    },
+    {
+      "case": "temporary",
+      "decision": {
+        "actions": [
+          {
+            "operation": "create",
+            "quote": "今晚我不喝咖啡。",
+            "text": "用户今晚（2026-10-23晚间）不喝咖啡。",
+            "subject": "user",
+            "kind": "temporary",
+            "confidence": 0.9,
+            "target_id": null,
+            "expected_revision": null,
+            "valid_from": "2026-10-23T18:06:54+08:00",
+            "valid_until": "2026-10-24T06:00:00+08:00"
+          }
+        ],
+        "clarification": null
+      }
+    },
+    {
+      "case": "subjects",
+      "decision": {
+        "actions": [
+          {
+            "operation": "create",
+            "quote": "我妹妹不吃香菜",
+            "text": "用户的妹妹不吃香菜。",
+            "subject": "妹妹",
+            "kind": "fact",
+            "confidence": 0.93,
+            "target_id": null,
+            "expected_revision": null,
+            "valid_from": null,
+            "valid_until": null
+          },
+          {
+            "operation": "create",
+            "quote": "我吃香菜",
+            "text": "用户吃香菜。",
+            "subject": "user",
+            "kind": "preference",
+            "confidence": 0.93,
+            "target_id": null,
+            "expected_revision": null,
+            "valid_from": null,
+            "valid_until": null
+          }
+        ],
+        "clarification": null
+      }
+    }
+  ],
+  "version": "0.2.0",
+  "passed": true,
+  "automated_tests": {
+    "passed": 59,
+    "failed": 0,
+    "scope": "isolated PostgreSQL schemas; simulated model"
+  },
+  "boundary_followup_report": "automatic-boundaries-verification.json",
+  "limitations": [
+    "模型判断可能漏记或误解；置信分数为模型自评。",
+    "不支持跨所有独立记忆的语义批量遗忘。",
+    "自动模式每轮通常需要两次云请求。"
+  ]
+}

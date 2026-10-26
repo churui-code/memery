@@ -1,0 +1,32 @@
+{
+  "synthetic_only": true,
+  "cases": [
+    {
+      "case": "hypothetical_no_followup",
+      "decision": {
+        "actions": [],
+        "clarification": null,
+        "retain_turn": true
+      }
+    },
+    {
+      "case": "do_not_record",
+      "decision": {
+        "actions": [],
+        "clarification": null,
+        "retain_turn": false
+      }
+    },
+    {
+      "case": "synthetic_secret",
+      "decision": {
+        "actions": [],
+        "clarification": null,
+        "retain_turn": false
+      }
+    }
+  ],
+  "date": "2026-10-23T18:11:02.103701+08:00",
+  "version": "0.2.0",
+  "passed": true
+}
