@@ -16,7 +16,7 @@ services:
       timeout: 3s
       retries: 30
   api:
-    image: home-memory:0.4
+    image: home-memory:0.5
     build: .
     init: true
     restart: unless-stopped

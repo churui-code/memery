@@ -1,5 +1,5 @@
 import json
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 import pytest
 from psycopg import sql
@@ -10,6 +10,7 @@ from app.repository import Repository,now
 from app.service import MemoryService
 from app.worker import process_experience
 from conftest import FakeEmbeddings
+from reflection_storage_helpers import drop_reflection_schema
 
 
 TEXT='我们昨天一起讨论了那部电影，你听完我的解释，改变了对结局的看法。'
@@ -233,7 +234,9 @@ def test_event_time_and_conversation_time_remain_distinct(repo,model):
     model.decision={'experience':{'title':'听说以前的公园经历','summary':'用户讲述往事','context_type':'reported',
         'occurred_at':'2020-01-02T12:00:00+08:00','time_quote':'2020年1月2日'}}
     result=talk(repo,model,text)
-    start=now().replace(year=2020,month=1,day=1)
+    # The source is normalized to Shanghai midnight; keep this historical
+    # query independent of the wall-clock hour when the suite runs.
+    start=datetime(2020,1,1,tzinfo=timezone.utc)
     end=start+timedelta(days=3)
     assert repo.search_experiences('',after=start,before=end,time_basis='occurred_at')[0]['id']==result['experience_id']
     assert repo.search_experiences('',after=start,before=end,time_basis='recorded_at')==[]
@@ -336,6 +339,7 @@ def test_upgrade_v2_preserves_surviving_messages_with_provenance(repo):
     memory=repo.remember({'text':'迁移测试事实'})[0]
     conversation=uuid4()
     with repo.pool.connection() as c:
+        drop_reflection_schema(c)
         c.execute('ALTER TABLE messages DROP COLUMN experience_id')
         for table in ('episode_details','episode_cues','episode_evidence','episode_versions',
                       'episode_associations','episode_rehearsals','episode_chunks','episode_jobs','episodes'):

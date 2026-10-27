@@ -18,6 +18,7 @@ from app.errors import MemoryError
 from app.model import MiniMax
 from app.repository import Repository
 from app.service import MemoryService
+from app.reflection import ReflectionService
 
 
 class SaveMemory(BaseModel):
@@ -116,6 +117,16 @@ class RecallPreview(BaseModel):
         return value.strip()
 
 
+class ReflectionSettingsPatch(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    enabled:bool=Field(strict=True)
+
+
+class ReflectionPreviewRequest(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    automatic:bool=False
+
+
 def create_app(settings=None,repo=None,embeddings=None,model=None):
     settings=settings or Settings()
     if not settings.api_token:
@@ -129,6 +140,7 @@ def create_app(settings=None,repo=None,embeddings=None,model=None):
             repository.replay_deletions(required=True)
             app.state.repo=repository
             app.state.service=MemoryService(repository,embeddings or LocalEmbeddings(settings),model or MiniMax(settings))
+            app.state.reflection=ReflectionService(repository,app.state.service.embeddings,app.state.service.model)
             yield
         finally:
             if getattr(app.state,'lab',None):
@@ -136,7 +148,7 @@ def create_app(settings=None,repo=None,embeddings=None,model=None):
             if repo is None:
                 repository.close()
 
-    app=FastAPI(title='事件记忆与动态唤醒',version='0.4.0',lifespan=lifespan)
+    app=FastAPI(title='事件记忆与周期反思',version='0.5.0',lifespan=lifespan)
     if settings.lab_enabled:
         @app.middleware('http')
         async def lab_only(request,call_next):
@@ -215,6 +227,30 @@ def create_app(settings=None,repo=None,embeddings=None,model=None):
     @app.post('/v1/recall/preview',dependencies=auth)
     def recall_preview(data:RecallPreview,request:Request):
         return request.app.state.service.recall_preview(**data.model_dump())
+
+    @app.get('/v1/reflection/settings',dependencies=auth)
+    def reflection_settings(request:Request):
+        return request.app.state.reflection.settings()
+
+    @app.patch('/v1/reflection/settings',dependencies=auth)
+    def reflection_settings_patch(data:ReflectionSettingsPatch,request:Request):
+        return request.app.state.reflection.set_enabled(data.enabled)
+
+    @app.post('/v1/reflection/preview',dependencies=auth)
+    def reflection_preview(data:ReflectionPreviewRequest,request:Request):
+        return request.app.state.reflection.preview(automatic=data.automatic)
+
+    @app.post('/v1/reflection/runs',dependencies=auth,status_code=202)
+    def reflection_enqueue(request:Request):
+        return request.app.state.reflection.enqueue(automatic=False)
+
+    @app.get('/v1/reflection/runs',dependencies=auth)
+    def reflection_runs(request:Request,limit:int=Query(default=50,ge=1,le=200),offset:int=Query(default=0,ge=0)):
+        return {'items':request.app.state.repo.reflection_runs(limit=limit,offset=offset),'limit':limit,'offset':offset}
+
+    @app.get('/v1/reflection/runs/{run_id}',dependencies=auth)
+    def reflection_run(run_id:UUID,request:Request):
+        return request.app.state.repo.reflection_run(run_id)
 
     @app.get('/v1/conversations/{conversation_id}',dependencies=auth)
     def conversation(conversation_id:UUID,request:Request,limit:int=Query(default=50,ge=1,le=200),offset:int=Query(default=0,ge=0)):

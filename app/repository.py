@@ -14,6 +14,7 @@ from app.journal import DeletionJournal
 from app.text import terms, ts_query, tokens
 from app.life_repository import LifeRepository
 from app.episode_repository import EpisodeRepository
+from app.reflection_repository import ReflectionRepository
 from app.clock import SystemClock
 from psycopg.types.json import Jsonb
 
@@ -28,7 +29,7 @@ def vector_literal(vector):
     return '['+','.join(str(float(v)) for v in vector)+']'
 
 
-class Repository(LifeRepository, EpisodeRepository):
+class Repository(LifeRepository, EpisodeRepository, ReflectionRepository):
     def __init__(self, settings, clock=None):
         self.settings = settings
         self.clock = clock or SystemClock()
@@ -51,9 +52,9 @@ class Repository(LifeRepository, EpisodeRepository):
             if not c.execute("SELECT to_regclass('schema_migrations') AS name").fetchone()['name']:
                 c.execute(Path(__file__).with_name('schema.sql').read_text(), prepare=False)
             version = c.execute('SELECT max(version) AS v FROM schema_migrations').fetchone()['v']
-            if version not in (1, 2, 3, 4, 5):
+            if version not in (1, 2, 3, 4, 5, 6):
                 raise MemoryError('schema_version', '数据库版本不受当前应用支持。', 503)
-            for target in range(version+1,6):
+            for target in range(version+1,7):
                 c.execute(Path(__file__).with_name(f'migration_{target:03}.sql').read_text(), prepare=False)
                 if target==3:
                     from app.text import chunks
@@ -339,19 +340,24 @@ class Repository(LifeRepository, EpisodeRepository):
                 c.rollback()
                 c.execute('SELECT pg_advisory_unlock(hashtextextended(%s,0))',(str(conversation_id),))
 
-    def start_call(self,conversation_id,source_ids,phase='answer',source_refs=None,estimated_input_tokens=None,policy_version=None,estimator_version=None):
+    def start_call(self,conversation_id,source_ids,phase='answer',source_refs=None,estimated_input_tokens=None,policy_version=None,estimator_version=None,reflection_run_id=None):
         call_id=uuid4()
         with self.pool.connection() as c:
             c.execute("""INSERT INTO model_calls(id,conversation_id,source_ids,model,status,phase,source_refs,
-                estimated_input_tokens,policy_version,created_at,estimator_version) VALUES(%s,%s,%s,%s,'running',%s,%s,%s,%s,%s,%s)""",
+                estimated_input_tokens,policy_version,created_at,estimator_version,reflection_run_id) VALUES(%s,%s,%s,%s,'running',%s,%s,%s,%s,%s,%s,%s)""",
                 (call_id,conversation_id,source_ids,self.settings.model_name,phase,Jsonb(json.loads(json.dumps(source_refs or [],default=str))),
-                 estimated_input_tokens,policy_version,self.clock.now(),estimator_version))
+                 estimated_input_tokens,policy_version,self.clock.now(),estimator_version,reflection_run_id))
         return call_id
 
     def finish_call(self,call_id,status,usage=None):
         usage=usage or {}
+        usage={key:value for key,value in usage.items() if key in ('input_tokens','output_tokens')
+               and type(value) is int and 0<=value<=2147483647}
         with self.pool.connection() as c:
-            c.execute('UPDATE model_calls SET status=%s,input_tokens=%s,output_tokens=%s WHERE id=%s',(status,usage.get('input_tokens'),usage.get('output_tokens'),call_id))
+            c.execute('''UPDATE model_calls SET status=CASE
+                WHEN reflection_run_id IS NOT NULL AND status='interrupted' THEN status ELSE %s END,
+                input_tokens=COALESCE(%s,input_tokens),output_tokens=COALESCE(%s,output_tokens) WHERE id=%s''',
+                (status,usage.get('input_tokens'),usage.get('output_tokens'),call_id))
 
     def save_answer(self,conversation_id,question,answer,source_ids,expected_epoch,auto_actions=None,retain_turn=True,
                     experience_description=None,self_updates=None,context_roots=None,episode_proposals=None,rehearsals=None):
@@ -430,6 +436,12 @@ class Repository(LifeRepository, EpisodeRepository):
             experience_id=self._archive_turn(c,conversation_id,question,answer,experience_description,roots)
             episode_ids=self._save_episodes(c,experience_id,episode_proposals,
                 [rid for kind,rid in roots if kind=='episode'])
+            for action in actions:
+                if action.operation=='update' and action.change_mode=='correction':
+                    c.execute('''UPDATE episodes e SET reflection_correction=true WHERE id=ANY(%s::uuid[])
+                        AND EXISTS(SELECT 1 FROM episode_evidence v WHERE v.episode_id=e.id
+                            AND v.experience_id=%s AND v.role='user' AND position(%s IN v.quote)>0)''',
+                        ([eid for eid in episode_ids if eid],experience_id,action.quote))
             self._save_rehearsals(c,experience_id,rehearsals)
             self_changes=self._save_self_updates(c,experience_id,self_updates or [])
             for role,content in [('user',question),('assistant',answer)]:
@@ -444,7 +456,7 @@ class Repository(LifeRepository, EpisodeRepository):
             experience_jobs=c.execute('SELECT status,count(*) AS n FROM experience_jobs GROUP BY status').fetchall()
             episode_count=c.execute('SELECT count(*) AS n FROM episodes WHERE deleted_at IS NULL').fetchone()['n']
             episode_jobs=c.execute('SELECT status,count(*) AS n FROM episode_jobs GROUP BY status').fetchall()
-            return {'database':'ok','version':'0.4.0','automatic_memory':True,'memories':total,'episodes':episode_count,
+            return {'database':'ok','version':'0.5.0','automatic_memory':True,'memories':total,'episodes':episode_count,
                     'episode_index_jobs':{r['status']:r['n'] for r in episode_jobs},
                     'experiences':experience_count,'experience_retention':'until_deleted',
                     'experience_index_jobs':{r['status']:r['n'] for r in experience_jobs},

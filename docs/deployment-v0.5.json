@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-26T20:37:54.899557+00:00",
+  "lab_health": {
+    "database": "ok",
+    "version": "0.5.0",
+    "automatic_memory": true,
+    "memories": 0,
+    "episodes": 0,
+    "episode_index_jobs": {},
+    "experiences": 0,
+    "experience_retention": "until_deleted",
+    "experience_index_jobs": {},
+    "index_jobs": {},
+    "model": "MiniMax-M3"
+  },
+  "production_version": "0.4.0",
+  "lab_encrypted_backup": "data/upgrades/v0.5-pre/lab-schema5-20261026T202115Z.hmem",
+  "production_deployed": false,
+  "production_reflection_enabled": false,
+  "reason": "v1.2 real semantic acceptance pending; cumulative live budget exhausted",
+  "production_baseline": {
+    "schema": 5,
+    "original_rows": 0,
+    "original_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "production_encrypted_backup": "data/backups/memory-20261027-061535-330658.hmem",
+  "candidate_image": "sha256:c8e63a8fb599ebf5855b882dde969d10eb74d75026b890923046d03989e66cde",
+  "lab_checks": {
+    "lab_unauthenticated_rejected": true,
+    "lab_production_api_unregistered": true,
+    "production_lab_api_unregistered": true,
+    "ui_mock_completed": true,
+    "ui_zero_cloud_calls": true,
+    "ui_reflective_state_created": true
+  },
+  "ui_screenshot": "docs/lab-v0.5.png",
+  "isolated_upgrade_verified": true,
+  "isolated_upgrade_report": "docs/verification-v0.5-upgrade.json"
+}

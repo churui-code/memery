@@ -98,7 +98,7 @@ def up():
     bootstrap_database()
     run(['build','api'])
     run(['run','--rm','--no-deps','api','python','-m','app.embeddings','--download'])
-    run(['up','-d','--force-recreate','--wait','api','worker'])
+    run(['up','-d','--force-recreate','--wait','api','worker','reflector'])
     print(json.dumps(wait_api(),ensure_ascii=False))
 
 
@@ -147,24 +147,31 @@ def restore(filename):
                     decrypt.kill()
                     decrypt.wait()
         run(['run','--rm','--no-deps','-e','DB_NAME='+staging,'api','python','-m','app.backup','replay'])
-        run(['stop','api','worker'])
+        run(['stop','api','worker','reflector'])
         stopped=True
         backup()  # Quiesced, encrypted rollback copy before replacing the database.
         run(['run','--rm','--no-deps','-e','DB_NAME='+staging,'api','python','-m','app.backup','replay'])
+        # The encrypted snapshot may predate paid requests, including failures.
+        # Export only after writers stop, then merge before the atomic switch.
+        # An unavailable live ledger or failed merge aborts restoration.
+        quota=run(['run','--rm','-T','--no-deps','api','python','-m','app.backup','quota-export'],
+                  stdout=subprocess.PIPE).stdout
+        run(['run','--rm','-T','--no-deps','-e','DB_NAME='+staging,'api','python','-m','app.backup','quota-merge'],
+            input=quota)
         sql_command("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='memory' AND pid<>pg_backend_pid();",database='postgres')
         sql_command(f'BEGIN; ALTER DATABASE memory RENAME TO {previous}; ALTER DATABASE {staging} RENAME TO memory; COMMIT;',database='postgres')
         promoted=True
-        run(['up','-d','--wait','api','worker'])
+        run(['up','-d','--wait','api','worker','reflector'])
         wait_api()
         sql_command(f'DROP DATABASE {previous} WITH (FORCE);',database='postgres')
         print('恢复完成，已重放独立删除账本。')
     except Exception:
         if promoted:
-            run(['stop','api','worker'])
+            run(['stop','api','worker','reflector'])
             sql_command("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='memory' AND pid<>pg_backend_pid();",database='postgres')
             sql_command(f'BEGIN; ALTER DATABASE memory RENAME TO {staging}; ALTER DATABASE {previous} RENAME TO memory; COMMIT;',database='postgres')
         if stopped:
-            run(['up','-d','api','worker'])
+            run(['up','-d','api','worker','reflector'])
         raise
     finally:
         # staging no longer exists after a successful promotion.

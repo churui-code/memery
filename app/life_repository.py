@@ -33,6 +33,7 @@ class LifeRepository:
 
     def invalidate_context(self, c, roots, erase=False, stale_experiences=True, block_cloud=False):
         rows = self.context_descendants(c, roots)
+        self._invalidate_reflections(c,rows,erase=erase)
         experiences = [r['id'] for r in rows if r['kind'] == 'experience']
         observations = [r['id'] for r in rows if r['kind'] == 'self']
         episodes = [r['id'] for r in rows if r['kind'] == 'episode']
@@ -43,7 +44,7 @@ class LifeRepository:
                 deleted_at=COALESCE(deleted_at,%s) WHERE id=ANY(%s::uuid[])''', (at,experiences))
             c.execute('DELETE FROM experience_chunks WHERE experience_id=ANY(%s::uuid[])', (experiences,))
             c.execute("UPDATE experience_jobs SET status='cancelled',lease_token=NULL,last_error=NULL WHERE experience_id=ANY(%s::uuid[])", (experiences,))
-            c.execute('''UPDATE self_observations SET text='',reason='',evidence_quote='',
+            c.execute('''UPDATE self_observations SET text='',reason='',evidence_quote='',evidence_manifest='[]',
                 deleted_at=COALESCE(deleted_at,%s),invalidated_at=COALESCE(invalidated_at,%s)
                 WHERE id=ANY(%s::uuid[])''', (at,at,observations))
             c.execute('''UPDATE episodes SET title='',gist='',importance_reason='',emotional_reason='',

@@ -61,6 +61,12 @@ def structured_tool(phase):
     if phase == 'reassessment':
         return {'name': 'reassess_memories', 'description': '根据最终证据重评经历与内部状态，不改变固定事实操作。',
                 'input_schema': inline_tool_schema(MemoryReassessment.model_json_schema())}
+    if phase in ('reflection_proposal', 'reflection_review'):
+        from app.reflection_types import ReflectionProposal, ReflectionReview
+        schema = ReflectionProposal if phase == 'reflection_proposal' else ReflectionReview
+        return {'name': 'propose_reflection' if phase == 'reflection_proposal' else 'review_reflection',
+                'description': '根据冻结原文提出内部认识变化。' if phase == 'reflection_proposal' else '逐句核对原反思提案与绑定证据，完整返回各单元判定后接受或拒绝，不修改提案。',
+                'input_schema': inline_tool_schema(schema.model_json_schema())}
     return None
 
 
@@ -108,6 +114,12 @@ class MiniMax:
 
     def reassess_memories(self,system,prompt):
         return self._structured(system,prompt,structured_tool('reassessment'))
+
+    def propose_reflection(self,system,prompt):
+        return self._structured(system,prompt,structured_tool('reflection_proposal'))
+
+    def review_reflection(self,system,prompt):
+        return self._structured(system,prompt,structured_tool('reflection_review'))
 
     def _structured(self,system,prompt,tool):
         data=self._request(system,[{'role':'user','content':prompt}],tool=tool)

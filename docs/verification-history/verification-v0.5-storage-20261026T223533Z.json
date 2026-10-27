@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-26T22:13:32.424524+08:00",
+  "project": "home-memory-qa",
+  "checks": {
+    "real_local_semantic_search": true,
+    "offline_save_and_semantic_search": true,
+    "offline_model_failure_preserves_storage": true,
+    "container_recreation_persistence": true,
+    "streaming_restore_preserves_experience_episode_and_self": true,
+    "encrypted_restore_replays_later_deletion": true,
+    "tampered_backup_rejected_without_service_loss": true,
+    "synthetic_online_data_cleaned": true
+  },
+  "model_calls": [],
+  "passed": true,
+  "v05_image": "sha256:3a80833ba7d81a71d95517373ad094ba1810cc175d3b6c84bb4caa01afd001d9",
+  "exit_code": 0
+}

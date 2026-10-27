@@ -5,6 +5,7 @@ import pytest
 from psycopg import sql
 from app.automatic import MemoryAction, validate_decision
 from app.errors import MemoryError
+from reflection_storage_helpers import drop_reflection_schema
 from app.repository import now
 from app.service import MemoryService
 from conftest import FakeEmbeddings
@@ -173,6 +174,7 @@ def test_automatic_write_rejects_concurrent_delete(repo,model):
 def test_upgrade_existing_v1_data_is_repeatable(repo):
     saved=repo.remember({'text':'迁移前的原话'})[0]
     with repo.pool.connection() as c:
+        drop_reflection_schema(c)
         c.execute('ALTER TABLE messages DROP COLUMN experience_id')
         for table in ('episode_details','episode_cues','episode_evidence','episode_versions',
                       'episode_associations','episode_rehearsals','episode_chunks','episode_jobs','episodes'):

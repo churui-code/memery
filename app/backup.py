@@ -5,7 +5,7 @@ import os
 import sys
 import struct
 import zipfile
-from datetime import datetime,timezone
+from datetime import date,datetime,timezone
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
@@ -18,6 +18,49 @@ LIMIT=256*1024*1024
 STREAM_MAGIC=b'HOME-MEMORY-2\0'
 CHUNK_SIZE=1024*1024
 MANIFEST_LIMIT=16*1024*1024
+
+
+def export_reflection_quota(repo):
+    """Export counters only; missing/unknown live databases fail closed."""
+    with repo.pool.connection() as c:
+        repo._state_lock(c)
+        version=c.execute('SELECT max(version) AS version FROM schema_migrations').fetchone()['version']
+        if version not in (5,6):raise ValueError('unsupported_quota_source_schema')
+        if version==5:
+            return {'version':1,'source_schema':5,'days':[]}
+        rows=c.execute('SELECT day,rounds,calls FROM reflection_daily_usage ORDER BY day').fetchall()
+        return {'version':1,'source_schema':6,'days':[
+            {'day':row['day'].isoformat(),'rounds':row['rounds'],'calls':row['calls']} for row in rows]}
+
+
+def merge_reflection_quota(repo,payload):
+    """The restored database can never lower any known daily high-water mark."""
+    if (not isinstance(payload,dict) or set(payload)!={'version','source_schema','days'}
+        or payload['version']!=1 or payload['source_schema'] not in (5,6)
+        or not isinstance(payload['days'],list) or len(payload['days'])>100000
+        or (payload['source_schema']==5 and payload['days'])):
+        raise ValueError('invalid_quota_high_water_mark')
+    entries=[]
+    seen=set()
+    for row in payload['days']:
+        if not isinstance(row,dict) or set(row)!={'day','rounds','calls'}:
+            raise ValueError('invalid_quota_high_water_mark')
+        day=date.fromisoformat(row['day'])
+        if day.isoformat()!=row['day'] or day in seen:
+            raise ValueError('invalid_quota_high_water_mark')
+        seen.add(day)
+        if any(type(row[key]) is not int or not 0<=row[key]<=2147483647 for key in ('rounds','calls')):
+            raise ValueError('invalid_quota_high_water_mark')
+        entries.append((day,row['rounds'],row['calls']))
+    with repo.pool.connection() as c:
+        repo._state_lock(c)
+        version=c.execute('SELECT max(version) AS version FROM schema_migrations').fetchone()['version']
+        if version!=6:raise ValueError('quota_target_requires_schema_six')
+        for entry in entries:
+            c.execute('''INSERT INTO reflection_daily_usage(day,rounds,calls) VALUES(%s,%s,%s)
+                ON CONFLICT(day) DO UPDATE SET rounds=GREATEST(reflection_daily_usage.rounds,EXCLUDED.rounds),
+                calls=GREATEST(reflection_daily_usage.calls,EXCLUDED.calls)''',entry)
+    return {'merged_days':len(entries),'source_schema':payload['source_schema']}
 
 
 def encrypt(dump,key,journal_records):
@@ -123,11 +166,23 @@ def decrypt_stream(reader,writer,key,journal_records):
 def main():
     settings=Settings()
     action=sys.argv[1]
+    if action in ('quota-export','quota-merge'):
+        repo=Repository(settings)
+        try:
+            if action=='quota-export':result=export_reflection_quota(repo)
+            else:
+                body=sys.stdin.buffer.read(MANIFEST_LIMIT+1)
+                if len(body)>MANIFEST_LIMIT:raise ValueError('quota_manifest_too_large')
+                result=merge_reflection_quota(repo,json.loads(body))
+            print(json.dumps(result,ensure_ascii=False))
+        finally:repo.close()
+        return
     if action=='replay':
         repo=Repository(settings)
         try:
             repo.migrate()
             count=repo.replay_deletions(required=True)
+            repo.reset_reflections_after_restore()
             repo.expire_history()
             print(json.dumps({'replayed':count,'health':repo.health()},ensure_ascii=False))
         finally:

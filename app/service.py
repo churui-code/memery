@@ -1,4 +1,5 @@
 import json
+import logging
 from contextlib import nullcontext
 from copy import deepcopy
 from time import monotonic
@@ -144,9 +145,14 @@ class MemoryService:
         if not self._chat_slots.acquire(blocking=False):
             raise MemoryError('model_busy', '当前回答任务较多，请稍后重试；记忆保存仍可用。', 429)
         try:
+            self.repo.record_chat_activity()
             return self._chat(text, conversation_id, auto_memory, recall_mode)
         finally:
             self._chat_slots.release()
+            try:
+                self.repo.record_chat_activity()
+            except Exception:
+                logging.getLogger('memory').warning('chat_activity_finish_unavailable')
 
     def _chat(self, text, conversation_id, auto_memory, recall_mode):
         conversation_id = conversation_id or uuid4()

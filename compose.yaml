@@ -1,7 +1,7 @@
 name: home-memory
 
 x-app: &app
-  image: home-memory:0.4
+  image: home-memory:0.5
   build: .
   init: true
   restart: unless-stopped
@@ -76,6 +76,10 @@ services:
   worker:
     <<: *app
     command: ["python", "-m", "app.worker"]
+
+  reflector:
+    <<: *app
+    command: ["python", "-m", "app.reflector"]
 
   tests:
     <<: *app

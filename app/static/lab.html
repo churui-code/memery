@@ -6,7 +6,7 @@
   <title>记忆实验台</title><link rel="stylesheet" href="/lab-assets/lab.css">
 </head>
 <body>
-<header><div><span class="eyebrow">MEMORY LAB · v0.4</span><h1>让记忆的变化看得见</h1><p>独立合成实验 · 时间、线索、回忆和情绪</p></div><span id="connection" class="badge">未连接</span></header>
+<header><div><span class="eyebrow">MEMORY LAB · v0.5</span><h1>让记忆的变化看得见</h1><p>独立合成实验 · 时间、线索、回忆和情绪</p></div><span id="connection" class="badge">未连接</span></header>
 <main>
   <section id="login" class="panel login">
     <h2>连接本地实验服务</h2><p>输入实验台的独立令牌。令牌仅留在当前页面内存，刷新后需要重新输入。</p>
@@ -15,17 +15,22 @@
   </section>
   <div id="workspace" hidden>
     <section class="toolbar panel"><label class="grow">当前实验<select id="experiments"></select></label><button id="refresh">刷新</button><button id="remove" class="danger">删除实验</button><button id="disconnect">断开连接</button></section>
-    <details class="panel setup"><summary>复制快照，比较策略或模型</summary><div class="form-row"><label>复制时的策略<select id="clone-policy"><option value="">保持当前策略</option><option value="balanced">均衡 v1</option><option value="strict">谨慎 v1</option></select></label><label>复制时的模型<select id="clone-model"><option value="">保持当前模型</option><option value="mock">模拟模型</option><option value="live">真实 MiniMax</option></select></label><label>复制时的向量<select id="clone-embedding"><option value="">保持当前向量</option><option value="fake">固定词面向量</option><option value="local">本地 BGE</option></select></label><button id="clone">复制快照对照</button></div><p class="muted">数据和时间保持相同；切换向量实现时会重新建立实验索引。</p></details>
+    <details class="panel setup"><summary>复制快照，比较策略或模型</summary><div class="form-row"><label>复制时的策略<select id="clone-policy"><option value="">保持当前策略</option><option value="balanced">均衡 v1</option><option value="strict">谨慎 v1</option></select></label><label>复制时的模型<select id="clone-model"><option value="">保持当前模型</option><option value="mock">模拟模型</option><option value="live">真实 MiniMax</option></select></label><label>复制时的向量<select id="clone-embedding"><option value="">保持当前向量</option><option value="fake">固定词面向量</option><option value="local">本地 BGE</option></select></label><label>复制时的反思<select id="clone-reflection"><option value="">保持当前设置</option><option value="off">关闭自动反思</option><option value="scheduled">开启周期条件</option></select></label><button id="clone">复制快照对照</button></div><p class="muted">数据和时间保持相同；切换向量实现时会重新建立实验索引。</p></details>
     <details class="panel setup" open><summary>创建一个合成实验</summary><form id="create-form" class="form-row">
       <label>名称<input id="name" value="我的记忆实验" maxlength="100" required></label>
       <label>合成场景<select id="scenario"></select></label>
       <label>生成模型<select id="model"><option value="mock">模拟 · 不调用云端</option><option value="live">真实 MiniMax · 每轮最多3次</option></select></label>
       <label>检索向量<select id="embedding"><option value="fake">固定词面向量 · 流程测试</option><option value="local">本地 BGE · 语义测试</option></select></label>
-      <label>回忆策略<select id="policy"><option value="balanced">均衡 v1 · 默认</option><option value="strict">谨慎 v1 · 提高自然唤醒门槛</option></select></label><button type="submit">创建实验</button>
+      <label>回忆策略<select id="policy"><option value="balanced">均衡 v1 · 默认</option><option value="strict">谨慎 v1 · 提高自然唤醒门槛</option></select></label><label>反思设置<select id="reflection-profile"><option value="off">关闭自动反思 · 默认</option><option value="scheduled">开启周期条件 · 显式执行</option></select></label><button type="submit">创建实验</button>
     </form></details>
     <div id="empty" class="panel empty">先创建一个实验，观察一段经历如何沉淀，以及怎样被线索唤醒。</div>
     <div id="experiment" hidden>
       <section class="clockbar panel"><div><span class="eyebrow">逻辑时间</span><strong id="clock"></strong><span id="meta" class="muted"></span></div><div class="buttons"><button data-days="1">推进1天</button><button data-days="30">推进30天</button><button data-days="365">推进1年</button><form id="advance-form"><input id="advance-days" type="number" min="0" max="36500" value="7" aria-label="推进天数"><button>推进天数</button></form></div></section>
+      <section class="panel reflection-panel"><div class="section-title"><div><h2>让经历形成新的理解</h2><p class="muted">推进时间不执行反思。这里先查看触发条件与原文证据，再显式运行；模拟模式只验证流程。真实反思最多两次云请求。</p></div><button id="download-reflection" disabled>下载反思报告</button></div>
+        <div class="form-row"><label>执行方式<select id="reflection-automatic"><option value="true">按周期条件判断</option><option value="false">手动反思 · 忽略空闲与冷却</option></select></label><button id="reflection-preview">只读预览触发条件</button><button id="reflection-run" class="primary">执行一次反思</button></div>
+        <p id="reflection-settings" class="muted"></p><p id="reflection-status" class="muted">尚未预览或执行反思。</p><div id="reflection-summary" class="reflection-summary"></div>
+        <details><summary>证据、状态差异、调用与完整反思报告</summary><pre id="reflection-raw"></pre></details>
+      </section>
       <div class="columns">
         <section class="panel timeline"><div class="section-title"><h2>经历与内在状态</h2><span id="count" class="badge"></span></div><p class="muted">原文长期保留；回忆的清晰度由当前线索与时间决定。</p><div id="events"></div>
           <details><summary>情绪与观点历史</summary><div id="states"></div></details>
@@ -37,7 +42,7 @@
         </section>
         <section class="panel inspection"><div class="section-title"><h2>这次为什么想起</h2><button id="download-preview" disabled>下载JSON</button></div><div class="tabs" role="tablist"><button class="active" data-tab="recall">召回解释</button><button data-tab="context">实际上下文</button><button data-tab="raw">完整响应</button></div><div id="inspect-empty" class="muted empty">提交线索后，这里显示候选、分数、展开层级、来源和预算。</div><div id="recall" class="tab-content"></div><pre id="context" class="tab-content" hidden></pre><pre id="raw" class="tab-content" hidden></pre></section>
       </div>
-      <section class="panel reports"><div class="section-title"><div><h2>跨时间对照实验</h2><p class="muted">每一步从相同快照开始，避免前面的测试答案影响后面的测试。模拟结果只证明流程，不证明语义或情感质量。</p></div><button id="download-report" disabled>下载报告</button></div><form id="run-form" class="form-row"><label>时间点（天，逗号分隔）<input id="run-days" value="0,30,365,1825" required></label><label>测试方式<select id="run-mode"><option value="probe">只读回忆 · 无云调用</option><option value="chat">完整对话 · 使用当前模型</option></select></label><label>完整重复轮数<select id="run-repeats"><option value="1">1轮</option><option value="3">3轮，全部保留</option></select></label><button>运行场景集</button></form><p id="run-status" class="muted">还没有运行报告。</p><div class="table-wrap"><table id="run-table" hidden><thead><tr><th>用例 / 天数</th><th>候选含目标来源</th><th>回答原话检查</th><th>耗时 / 云调用</th><th>结果</th></tr></thead><tbody></tbody></table></div><details><summary>完整报告与逐步上下文</summary><pre id="report-raw"></pre></details></section>
+      <section class="panel reports"><div class="section-title"><div><h2>跨时间对照实验</h2><p class="muted">每一步从相同快照开始，避免前面的测试答案影响后面的测试。模拟结果只证明流程，不证明语义或情感质量。</p></div><button id="download-report" disabled>下载报告</button></div><form id="run-form" class="form-row"><label>时间点（天，逗号分隔）<input id="run-days" value="0,30,365,1825" required></label><label>测试方式<select id="run-mode"><option value="probe">只读回忆 · 反思阶段可能调用云端</option><option value="chat">完整对话 · 使用当前模型</option></select></label><label>反思对照<select id="run-reflection"><option value="off">关闭反思</option><option value="on">开启反思 · 按周期条件</option><option value="paired">关闭 / 开启 · 成对对照</option></select></label><label>完整重复轮数<select id="run-repeats"><option value="1">1轮</option><option value="3">3轮，全部保留</option></select></label><button>运行场景集</button></form><p id="run-status" class="muted">还没有运行报告。</p><div class="table-wrap"><table id="run-table" hidden><thead><tr><th>用例 / 天数 / 对照侧</th><th>候选含目标来源</th><th>回答原话检查</th><th>耗时 / 云调用</th><th>反思与结果</th></tr></thead><tbody></tbody></table></div><details><summary>完整报告与逐步上下文</summary><pre id="report-raw"></pre></details></section>
     </div>
   </div>
 </main><div id="notice" role="status" aria-live="polite" hidden></div><footer>记忆实验台 · 原文、回忆、情绪分别观察 · 情绪数值是模型内部状态描述</footer>

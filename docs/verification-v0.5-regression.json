@@ -1,0 +1,21 @@
+{
+  "version": "0.5",
+  "policy_version": "reflection-v1.2",
+  "regression": {
+    "command": "python3 scripts/manage.py test",
+    "passed": 397,
+    "failed": 0,
+    "seconds": 68.79,
+    "warning": "Existing Starlette TestClient httpx deprecation"
+  },
+  "host_budget_tests": {
+    "command": "python3 -m unittest discover -s scripts -p 'test_reflection_budget.py' -v",
+    "passed": 12
+  },
+  "frozen_mock_pairs": {
+    "passed": 12,
+    "cloud_calls": 0
+  },
+  "production_release": false,
+  "reason": "Latest semantic policy has not completed real-model acceptance; cumulative QA budget exceeded and further cloud calls blocked."
+}

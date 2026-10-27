@@ -1,0 +1,39 @@
+{
+  "version": "reflection-qa-budget-v1",
+  "scope": "reflection-v0.5-frozen-synthetic-acceptance",
+  "fixture_sha256": "aa9fc19fd4e167491d11d3e434a603e9f258c6232cc686a464c11b1df9be59da",
+  "cumulative_limit": 96,
+  "charged_calls": 142,
+  "remaining_calls": 0,
+  "over_limit": true,
+  "reserved_pending_calls": 0,
+  "provider_usage": {
+    "known_input_tokens": 398391,
+    "known_output_tokens": 25463,
+    "complete": false
+  },
+  "historical_runs": 2,
+  "backfill_runs": [
+    {
+      "run_id": "legacy-c698722bf8ddb7522689310ba501b254b75beaf0ac2a15db76e69553c813247a",
+      "calls": 68,
+      "reports": [
+        {
+          "name": "verification-v0.5-20261026T110135547819Z-3008a6e8f79146d28a4f8bcb5b556d74.json",
+          "sha256": "66bc3fa92ff994a1e231abe211b88c74575bdeefd8767384495300d269a33207"
+        }
+      ]
+    },
+    {
+      "run_id": "legacy-ee2c904fc697574595bad020230f9e04eb0301443819885cfd21e23ebf0d4440",
+      "calls": 74,
+      "reports": [
+        {
+          "name": "verification-v0.5.json",
+          "sha256": "2f0431164476b0b2b7ebb3b93658c32e21fa65892819b604c5fa3964760b12f0"
+        }
+      ]
+    }
+  ],
+  "counting": "durable precharge; failures and interrupted reservations remain charged; not a billing claim"
+}

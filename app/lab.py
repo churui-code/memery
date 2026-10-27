@@ -54,6 +54,7 @@ class CreateExperiment(LabInput):
     model_mode: Literal['mock', 'live'] = 'mock'
     embedding_mode: Literal['fake', 'local'] = 'fake'
     policy_profile: Literal['balanced', 'strict'] = 'balanced'
+    reflection_profile: Literal['off', 'scheduled'] = 'off'
     start_time: AwareDatetime = datetime.fromisoformat(START_TIME)
     synthetic: Literal[True] = True
 
@@ -63,6 +64,7 @@ class CloneExperiment(LabInput):
     model_mode: Literal['mock', 'live'] | None = None
     embedding_mode: Literal['fake', 'local'] | None = None
     policy_profile: Literal['balanced', 'strict'] | None = None
+    reflection_profile: Literal['off', 'scheduled'] | None = None
 
 
 class AddEvent(LabInput):
@@ -97,6 +99,11 @@ class RunInput(LabInput):
     mode: Literal['probe', 'chat'] = 'probe'
     days: list[int] = Field(default_factory=lambda: [0, 30, 365, 1825], min_length=1, max_length=6)
     repeats: int = Field(default=1, ge=1, le=3)
+    reflection_mode: Literal['off', 'on', 'paired'] = 'off'
+
+
+class ReflectionInput(LabInput):
+    automatic: bool = False
 
 
 class LabEmbeddings:
@@ -118,6 +125,7 @@ class LabEmbeddings:
 
 class LabModel:
     cloud_calls = 0
+    is_mock = True
 
     def decide_memories(self, system, prompt):
         return {'decision': {'actions': []}, 'usage': {}}
@@ -125,19 +133,62 @@ class LabModel:
     def reassess_memories(self, system, prompt):
         return {'decision': {}, 'usage': {}}
 
+    def propose_reflection(self, system, prompt):
+        payload = json.loads(prompt)
+        # A visibly synthetic interpretation exercises evidence/version writes;
+        # it is never presented as a semantic or emotional quality result.
+        key = 'lab_mock_interpretation'
+        if any(row.get('state_key', row.get('key')) == key for row in payload.get('self_state', [])):
+            return {'decision': {'updates': []}, 'usage': {}}
+        event = next((row for row in payload.get('episodes', []) if row.get('pending') and row.get('evidence')), None)
+        updates = [] if event is None else [{'id': 'mock_interpretation', 'domain': 'belief', 'key': key,
+            'text': '模拟认识：这段合成经历需要结合具体情境和原话理解。',
+            'reason': '仅用于验证反思原文引用、复核与状态版本的合成夹具，不用于评价认识质量。',
+            'confidence': .5, 'evidence_ids': [event['evidence'][0]['id']],
+            'target_id': None, 'expected_revision': 0}]
+        return {'decision': {'updates': updates}, 'usage': {}}
+
+    def review_reflection(self, system, prompt):
+        payload = json.loads(prompt)
+        return {'decision': {'reviews': [{'proposal_id': row['id'], 'accept': True,
+            'reason': '合成流程夹具：接受固定模拟提案，仅验证事务与来源。',
+            'checks': [{'unit_id': unit['unit_id'], 'support': 'interpretation',
+                'evidence_ids': list(row['evidence_ids']),
+                'note': '模拟逐句复核，仅验证单元覆盖与来源绑定，不证明解释质量。'}
+                for unit in payload['review_units'] if unit['proposal_id'] == row['id']]}
+            for row in payload.get('proposals', [])]}, 'usage': {}}
+
     def chat(self, system, messages):
         return {'text': '模拟回答：本轮只验证记忆流程。请在右侧查看实际选中的证据；此输出不用于评价模型回答质量。',
                 'usage': {'input_tokens': 0, 'output_tokens': 0}}
 
 
+class LabCallBudget:
+    """One ledger per run, shared across every snapshot, time point and arm."""
+    def __init__(self, limit):
+        self.limit = limit
+        self.calls = 0
+        self.lock = Lock()
+
+    def consume(self):
+        with self.lock:
+            if self.calls >= self.limit:
+                raise MemoryError('lab_run_call_budget', '本次实验已达到云调用总上限。', 429)
+            self.calls += 1
+
+
 class MeteredMiniMax(MiniMax):
-    def __init__(self, settings):
+    def __init__(self, settings, call_limit=3, budget=None):
         super().__init__(settings)
         self.cloud_calls = 0
+        self.call_limit = call_limit
+        self.budget = budget
 
     def _request(self, *args, **kwargs):
-        if self.cloud_calls >= 3:
-            raise MemoryError('lab_call_budget', '本轮已达到三次云调用上限。', 429)
+        if self.cloud_calls >= self.call_limit:
+            raise MemoryError('lab_call_budget', '当前阶段已达到云调用上限。', 429)
+        if self.budget is not None:
+            self.budget.consume()
         self.cloud_calls += 1
         return super()._request(*args, **kwargs)
 
@@ -179,12 +230,16 @@ class LabManager:
                 raise RuntimeError('unsupported_lab_registry')
             for experiment in self.registry['experiments'].values():
                 experiment.setdefault('policy_profile', 'balanced')
+                experiment.setdefault('reflection_profile', 'off')
+                experiment.setdefault('reflection_runs', {})
                 if 'policy_parameters' not in experiment:
                     experiment['policy_parameters'] = asdict(LAB_POLICIES['balanced'])
                     experiment['policy_version'] = LAB_POLICIES['balanced'].version
-                for run in experiment.get('runs', {}).values():
+                for run in [*experiment.get('runs', {}).values(), *experiment['reflection_runs'].values()]:
                     if run['status'] in ('queued', 'running'):
                         run.update(status='interrupted', error='实验服务重启，运行未完成；结果没有自动重试。')
+                        if run['id'] in experiment['reflection_runs']:
+                            experiment['reflection_recovery_required'] = True
             self._save()
 
     def close(self):
@@ -212,7 +267,7 @@ class LabManager:
             raise MemoryError('lab_busy', '实验正在执行，请完成后再修改或删除。', 409)
         try:
             meta = self._meta(experiment_id)
-            if not allow_run and any(run['status'] in ('queued', 'running') for run in meta['runs'].values()):
+            if not allow_run and self._active_runs(meta):
                 raise MemoryError('lab_busy', '实验报告已排队或正在执行，请结束后再操作。', 409)
             yield meta
         finally:
@@ -225,7 +280,16 @@ class LabManager:
         repo = Repository(self._settings(meta), clock=MutableClock(datetime.fromisoformat(at or meta['clock'])))
         try:
             if replay:
+                # Older laboratory schemas are independent of the main API's
+                # migration and must be upgraded before accessing new tables.
+                repo.migrate()
                 repo.replay_deletions(required=True)
+                if meta.get('reflection_recovery_required'):
+                    repo.reset_reflections_after_restore(reason='lab_restarted')
+                    self._reflection_service(repo, meta)[0].set_enabled(meta.get('reflection_profile') == 'scheduled')
+                    with self.guard:
+                        self.registry['experiments'][meta['id']].pop('reflection_recovery_required', None)
+                        self._save()
             return repo
         except Exception:
             repo.close()
@@ -239,8 +303,20 @@ class LabManager:
         return service, model
 
     @staticmethod
+    def _active_runs(meta):
+        return any(run['status'] in ('queued', 'running') for run in
+                   [*meta.get('runs', {}).values(), *meta.get('reflection_runs', {}).values()])
+
+    def _reflection_service(self, repo, meta, budget=None):
+        from app.reflection import ReflectionService
+        embeddings = self.local_embeddings if meta['embedding_mode'] == 'local' else LabEmbeddings()
+        model = MeteredMiniMax(self.settings, call_limit=2, budget=budget) if meta['model_mode'] == 'live' else LabModel()
+        return ReflectionService(repo, embeddings, model), model
+
+    @staticmethod
     def _public(meta):
-        return {key: value for key, value in meta.items() if key not in ('schema', 'journal', 'runs')}
+        return {key: value for key, value in meta.items() if key not in
+                ('schema', 'journal', 'runs', 'reflection_runs', 'reflection_recovery_required')}
 
     def listing(self):
         with self.guard:
@@ -259,7 +335,8 @@ class LabManager:
                 'created_at': datetime.now(timezone.utc).isoformat(),
                 'policy_profile': data.policy_profile, 'policy_version': LAB_POLICIES[data.policy_profile].version,
                 'policy_parameters': asdict(LAB_POLICIES[data.policy_profile]),
-                'fixture_events': {}, 'runs': {}}
+                'reflection_profile': data.reflection_profile,
+                'fixture_events': {}, 'runs': {}, 'reflection_runs': {}}
 
     def create(self, data):
         if data.model_mode == 'live' and not self.settings.model_key:
@@ -268,6 +345,7 @@ class LabManager:
         repo = self._repo(meta, replay=False)
         try:
             repo.migrate()
+            self._reflection_service(repo, meta)[0].set_enabled(data.reflection_profile == 'scheduled')
             for event in scenario(data.scenario_id)['events']:
                 result = self._inject(repo, event)
                 meta['fixture_events'][event['key']] = str(result['experience_id'])
@@ -341,7 +419,8 @@ class LabManager:
             target = self._new_meta(CreateExperiment(name=data.name, scenario_id='empty',
                 start_time=datetime.fromisoformat(source['clock']), model_mode=data.model_mode or source['model_mode'],
                 embedding_mode=data.embedding_mode or source['embedding_mode'],
-                policy_profile=data.policy_profile or source['policy_profile']))
+                policy_profile=data.policy_profile or source['policy_profile'],
+                reflection_profile=data.reflection_profile or source.get('reflection_profile', 'off')))
             if data.policy_profile is None:
                 target.update(policy_parameters=source['policy_parameters'], policy_version=source['policy_version'])
             if target['model_mode'] == 'live' and not self.settings.model_key:
@@ -353,6 +432,8 @@ class LabManager:
                 repo.migrate()
                 self._copy_schema(repo, source['schema'], target['schema'])
                 shutil.copyfile(source['journal'], target['journal'])
+                repo.reset_reflections_after_restore(reason='cloned')
+                self._reflection_service(repo, target)[0].set_enabled(target['reflection_profile'] == 'scheduled')
                 # Vectors built by a different embedding implementation must not mix.
                 if target['embedding_mode'] != source['embedding_mode']:
                     with repo.pool.connection() as connection:
@@ -389,6 +470,7 @@ class LabManager:
                           for table in ('episodes', 'episode_rehearsals', 'experiences', 'self_observations')}
             return self._public(meta) | {'events': events, 'originals': originals, 'self_state': repo.self_state(),
                 'self_history': repo.self_history(limit=100), 'counts': counts, 'health': repo.health(),
+                'reflection_settings': self._reflection_service(repo, meta)[0].settings(),
                 'view_limit': 1000}
         finally:
             repo.close()
@@ -447,7 +529,7 @@ class LabManager:
 
     def delete(self, identifier):
         with self._locked(identifier) as meta:
-            if any(run['status'] in ('queued', 'running') for run in meta['runs'].values()):
+            if self._active_runs(meta):
                 raise MemoryError('lab_busy', '实验报告仍在执行，请结束后删除。', 409)
             repo = self._repo(meta)
             try:
@@ -462,6 +544,89 @@ class LabManager:
                 self._save()
             shutil.rmtree(Path(meta['journal']).parent)
             return {'deleted': True, 'id': identifier}
+
+    def reflection_preview(self, identifier, automatic=False):
+        with self._locked(identifier) as meta:
+            repo = self._repo(meta)
+            try:
+                service, _ = self._reflection_service(repo, meta)
+                return {'preview': service.preview(automatic=automatic), 'read_only': True,
+                        'clock': meta['clock'], 'cloud_calls': 0, 'model_mode': meta['model_mode'],
+                        'reflection_profile': meta.get('reflection_profile', 'off'),
+                        'note': '模拟模式只验证调度与来源流程，不评价观点或情绪质量。'}
+            finally:
+                repo.close()
+
+    def reflection_runs(self, identifier, run_id=None):
+        runs = self._meta(identifier).get('reflection_runs', {})
+        if run_id is None:
+            return {'items': list(runs.values())}
+        if str(run_id) not in runs:
+            raise MemoryError('lab_reflection_not_found', '反思实验报告不存在。', 404)
+        return runs[str(run_id)]
+
+    def _update_reflection_run(self, identifier, run_id, **updates):
+        with self.guard:
+            self.registry['experiments'][identifier]['reflection_runs'][run_id].update(updates)
+            self._save()
+
+    def start_reflection(self, identifier, data):
+        if self.stopping.is_set() or not self.run_slots.acquire(blocking=False):
+            raise MemoryError('lab_queue_full', '实验运行队列已满或正在停止，请稍后再试。', 429)
+        try:
+            with self._locked(identifier) as meta:
+                run = {'id': str(uuid4()), 'status': 'queued', 'automatic': data.automatic,
+                       'clock': meta['clock'], 'model_mode': meta['model_mode'],
+                       'reflection_profile': meta.get('reflection_profile', 'off'),
+                       'cloud_calls': 0, 'cloud_call_limit': 2 if meta['model_mode'] == 'live' else 0,
+                       'started_at': datetime.now(timezone.utc).isoformat(),
+                       'note': '模拟模式只验证反思流程；真实反思最多两次请求，不自动重试。'}
+                with self.guard:
+                    self.registry['experiments'][str(identifier)]['reflection_runs'][run['id']] = run
+                    self._save()
+            self.executor.submit(self._execute_reflection, str(identifier), run['id'])
+            return deepcopy(run)
+        except Exception:
+            self.run_slots.release()
+            if 'run' in locals():
+                self._update_reflection_run(str(identifier), run['id'], status='interrupted', error='lab_interrupted')
+            raise
+
+    def _execute_reflection(self, identifier, run_id):
+        repo, model = None, None
+        started = time.monotonic()
+        try:
+            with self._locked(identifier, wait=True, allow_run=True) as meta:
+                if self.stopping.is_set():
+                    raise MemoryError('lab_interrupted', '实验服务正在停止。', 503)
+                run = meta['reflection_runs'][run_id]
+                self._update_reflection_run(identifier, run_id, status='running')
+                repo = self._repo(meta)
+                service, model = self._reflection_service(repo, meta, LabCallBudget(run['cloud_call_limit']))
+                before = repo.self_state()
+                preview = service.preview(automatic=run['automatic'])
+                self._update_reflection_run(identifier, run_id, before_state=before, preview=preview)
+                if preview['eligible']:
+                    queued = service.enqueue(automatic=run['automatic'])
+                    result = service.execute(queued['id'])
+                    if result is None:
+                        result = repo.reflection_run(queued['id'])
+                else:
+                    result = {'status': 'skipped', 'reasons': preview.get('reasons', [])}
+                self._update_reflection_run(identifier, run_id, result=result,
+                    status='completed' if result and result.get('status') in ('completed', 'skipped') else 'failed',
+                    actual_source_manifest=result.get('source_manifest', []) if result else [],
+                    after_state=repo.self_state(), cloud_calls=model.cloud_calls,
+                    elapsed_ms=round((time.monotonic()-started)*1000, 2))
+        except Exception as exc:
+            self._update_reflection_run(identifier, run_id,
+                status='interrupted' if self.stopping.is_set() else 'failed',
+                error=getattr(exc, 'code', type(exc).__name__), cloud_calls=getattr(model, 'cloud_calls', 0),
+                elapsed_ms=round((time.monotonic()-started)*1000, 2))
+        finally:
+            if repo:
+                repo.close()
+            self.run_slots.release()
 
     def start_run(self, identifier, data):
         if any(day < 0 or day > 36500 for day in data.days):
@@ -489,10 +654,15 @@ class LabManager:
             cases = [probe for probe in PROBES if probe['expected_key'] in meta['fixture_events']]
             if not cases:
                 raise MemoryError('lab_no_cases', '此实验没有内置场景，请手动查询或使用内置场景建立报告。', 400)
-            steps = len(cases) * len(data.days) * data.repeats
+            case_count = len(cases) * len(data.days) * data.repeats
+            arms = ['off', 'on'] if data.reflection_mode == 'paired' else [data.reflection_mode]
+            per_case_limit = (3 * len(arms) if data.mode == 'chat' else 0) + (2 if 'on' in arms else 0)
+            steps = case_count * len(arms)
             run = {'id': run_id, 'status': 'queued', 'mode': data.mode, 'days': data.days,
                    'repeats': data.repeats, 'steps': steps, 'completed': 0, 'results': [],
-                   'cloud_call_limit': steps*3 if data.mode == 'chat' and meta['model_mode'] == 'live' else 0,
+                   'reflection_mode': data.reflection_mode, 'arms': arms, 'cases': case_count,
+                   'per_case_cloud_call_limit': per_case_limit if meta['model_mode'] == 'live' else 0,
+                   'cloud_call_limit': case_count*per_case_limit if meta['model_mode'] == 'live' else 0,
                    'cloud_calls': 0, 'schema': 'lab_run_' + UUID(run_id).hex,
                    'scenario_version': SCENARIO_VERSION, 'policy_version': meta['policy_version'],
                    'policy_profile': meta['policy_profile'], 'policy_parameters': meta['policy_parameters'],
@@ -533,10 +703,79 @@ class LabManager:
                 'selected_contains_expected_source': bool(targets & selected),
                 'context_quote_checks': {quote: any(quote in actual for actual in quotes) for quote in required}}
 
+    def _run_case(self, repo, meta, run, case, day, repeat, arm, budget):
+        started = time.monotonic()
+        row = {'case': case['id'], 'query': case['query'], 'day': day, 'repeat': repeat,
+               'arm': arm, 'pair_id': f"{repeat}:{day}:{case['id']}",
+               'required_quotes': case['required'], 'status': 'completed', 'cloud_calls': 0,
+               'candidate_contains_expected_source': False,
+               'selected_contains_expected_source': False, 'selected_episode_ids': [],
+               'context_quote_checks': {quote: False for quote in case['required']},
+               'context_basis': 'answer.actual_context' if run['mode'] == 'chat' else 'preview',
+               'context_evaluated': False, 'model_mode': meta['model_mode']}
+        model, reflection_model = None, None
+        try:
+            reflection, reflection_model = self._reflection_service(repo, meta, budget)
+            reflection.set_enabled(arm == 'on')
+            before = repo.self_state()
+            reflection_preview = reflection.preview(automatic=True)
+            row['reflection'] = {'enabled': arm == 'on', 'preview': reflection_preview,
+                                 'before_state': before, 'model_mode': meta['model_mode']}
+            if arm == 'on':
+                if reflection_preview['eligible']:
+                    queued = reflection.enqueue(automatic=True)
+                    result = reflection.execute(queued['id'])
+                    if result is None:
+                        result = repo.reflection_run(queued['id'])
+                else:
+                    result = {'status': 'skipped', 'reasons': reflection_preview.get('reasons', [])}
+                row['reflection']['result'] = result
+                row['reflection']['actual_source_manifest'] = result.get('source_manifest', []) if result else []
+                if result is None or result.get('status') not in ('completed', 'skipped'):
+                    row.update(status='failed', error='lab_reflection_failed')
+            row['reflection']['after_state'] = repo.self_state()
+            row['reflection']['cloud_calls'] = reflection_model.cloud_calls
+            service, model = self._service(repo, meta)
+            if isinstance(model, MeteredMiniMax):
+                model.budget = budget
+            preview = service.recall_preview(case['query'], recall_mode='natural')
+            experience_id = meta['fixture_events'][case['expected_key']]
+            with repo.pool.connection() as connection:
+                episode_ids = [str(item['episode_id']) for item in connection.execute(
+                    'SELECT DISTINCT episode_id FROM episode_evidence WHERE experience_id=%s',
+                    (experience_id,)).fetchall()]
+            context = preview.get('payload', preview.get('context', {}))
+            preview_checks = self._context_checks(context, episode_ids, case['required'])
+            preview_hit = any(str(item.get('id')) in episode_ids for item in preview.get('candidates', []))
+            row.update(preview=preview, expected_experience_id=experience_id,
+                       preview_candidate_contains_expected_source=preview_hit,
+                       **{'preview_' + key: value for key, value in preview_checks.items()})
+            if run['mode'] == 'chat':
+                answer = service.chat(case['query'])
+                row['answer'] = answer
+                actual = answer.get('actual_context')
+                if not isinstance(actual, dict) or not isinstance(actual.get('experience_evidence'), list):
+                    raise MemoryError('lab_actual_context_missing', '实验回答缺少实际上下文，不能评价证据命中。', 502)
+                row.update(self._context_checks(actual, episode_ids, case['required']),
+                    context_evaluated=True, actual_next_context=actual,
+                    candidate_contains_expected_source=any(str(item.get('id')) in episode_ids
+                        for item in answer.get('recall_trace', {}).get('candidates', [])))
+                row['answer_quote_checks'] = {quote: quote in answer['answer'] for quote in case['required']}
+                row['answer_quality_evaluated'] = meta['model_mode'] == 'live'
+            else:
+                row.update(preview_checks, candidate_contains_expected_source=preview_hit, context_evaluated=True)
+        except Exception as exc:
+            row.update(status='failed', error=getattr(exc, 'code', type(exc).__name__))
+        finally:
+            row['cloud_calls'] = getattr(model, 'cloud_calls', 0) + getattr(reflection_model, 'cloud_calls', 0)
+            if 'reflection' in row:
+                row['reflection']['cloud_calls'] = getattr(reflection_model, 'cloud_calls', 0)
+            row['elapsed_ms'] = round((time.monotonic()-started)*1000, 2)
+        return jsonable_encoder(row)
+
     def _execute_run(self, identifier, run_id, cases):
         repo = None
         try:
-            # Holding the source experiment prevents edits during snapshot comparisons.
             if self.stopping.is_set():
                 raise MemoryError('lab_interrupted', '实验服务正在停止。', 503)
             with self._locked(identifier, wait=True, allow_run=True) as meta:
@@ -548,61 +787,39 @@ class LabManager:
                 run_directory.mkdir(mode=0o700)
                 journal = run_directory / 'deletions.jsonl'
                 journal.touch(mode=0o600)
-                work = meta | {'schema': run['schema'], 'journal': str(journal)}
-                repo = self._repo(work, replay=False)
-                repo.migrate()
+                budget = LabCallBudget(run['cloud_call_limit'])
                 results, cloud_calls = [], 0
                 for repeat in range(run['repeats']):
                     for day in run['days']:
                         for case in cases:
-                            if self.stopping.is_set():
-                                raise MemoryError('lab_interrupted', '实验服务正在停止。', 503)
-                            self._copy_schema(repo, meta['schema'], work['schema'])
-                            shutil.copyfile(meta['journal'], journal)
-                            repo.clock = MutableClock(datetime.fromisoformat(meta['clock']) + timedelta(days=day))
-                            service, model = self._service(repo, work)
-                            started = time.monotonic()
-                            preview = service.recall_preview(case['query'], recall_mode='natural')
-                            experience_id = meta['fixture_events'][case['expected_key']]
-                            with repo.pool.connection() as connection:
-                                episode_ids = [str(row['episode_id']) for row in connection.execute(
-                                    'SELECT DISTINCT episode_id FROM episode_evidence WHERE experience_id=%s',
-                                    (experience_id,)).fetchall()]
-                            context = preview.get('payload', preview.get('context', {}))
-                            preview_checks = self._context_checks(context, episode_ids, case['required'])
-                            preview_candidate_hit = any(str(item.get('id')) in episode_ids
-                                                        for item in preview.get('candidates', []))
-                            row = {'case': case['id'], 'query': case['query'], 'day': day, 'repeat': repeat,
-                                   'preview': preview, 'expected_experience_id': experience_id,
-                                   'preview_candidate_contains_expected_source': preview_candidate_hit,
-                                   **{'preview_' + key: value for key, value in preview_checks.items()},
-                                   'candidate_contains_expected_source': preview_candidate_hit,
-                                   **preview_checks, 'context_basis': 'preview', 'context_evaluated': True,
-                                   'required_quotes': case['required'], 'status': 'completed'}
-                            if run['mode'] == 'chat':
-                                # A diagnostic preview has a different budget and
-                                # cannot prove what a subsequent answer received.
-                                row.update(self._context_checks({}, episode_ids, case['required']),
-                                    candidate_contains_expected_source=False,
-                                    context_basis='answer.actual_context', context_evaluated=False)
-                                try:
-                                    answer = service.chat(case['query'])
-                                    row['answer'] = answer
-                                    actual = answer.get('actual_context')
-                                    if not isinstance(actual, dict) or not isinstance(actual.get('experience_evidence'), list):
-                                        raise MemoryError('lab_actual_context_missing', '实验回答缺少实际上下文，不能评价证据命中。', 502)
-                                    row.update(self._context_checks(actual, episode_ids, case['required']),
-                                        context_evaluated=True,
-                                        candidate_contains_expected_source=any(str(item.get('id')) in episode_ids
-                                            for item in answer.get('recall_trace', {}).get('candidates', [])))
-                                    row['answer_quote_checks'] = {quote: quote in answer['answer'] for quote in case['required']}
-                                    row['answer_quality_evaluated'] = meta['model_mode'] == 'live'
-                                except Exception as exc:
-                                    row.update(status='failed', error=getattr(exc, 'code', type(exc).__name__))
-                            row.update(elapsed_ms=round((time.monotonic()-started)*1000, 2), cloud_calls=model.cloud_calls)
-                            cloud_calls += model.cloud_calls
-                            results.append(jsonable_encoder(row))
-                            self._update_run(identifier, run_id, results=results, completed=len(results), cloud_calls=cloud_calls)
+                            for arm in run.get('arms', ['off']):
+                                if self.stopping.is_set():
+                                    raise MemoryError('lab_interrupted', '实验服务正在停止。', 503)
+                                # A separate random schema per arm keeps real-day quotas
+                                # isolated. The run-wide ledger is deliberately outside it.
+                                work = meta | {'schema': 'lab_run_' + uuid4().hex, 'journal': str(journal)}
+                                self._update_run(identifier, run_id, schema=work['schema'])
+                                repo = self._repo(work, replay=False)
+                                repo.migrate()
+                                self._copy_schema(repo, meta['schema'], work['schema'])
+                                shutil.copyfile(meta['journal'], journal)
+                                repo.reset_reflections_after_restore(reason='cloned')
+                                repo.clock = MutableClock(datetime.fromisoformat(meta['clock']) + timedelta(days=day))
+                                row = self._run_case(repo, work, run, case, day, repeat, arm, budget)
+                                cloud_calls += row['cloud_calls']
+                                results.append(row)
+                                self._update_run(identifier, run_id, results=results, completed=len(results), cloud_calls=cloud_calls)
+                                self._drop(repo, work['schema'])
+                                repo.close()
+                                repo = None
+                arm_metrics = {}
+                for arm in run.get('arms', ['off']):
+                    items = [row for row in results if row['arm'] == arm]
+                    arm_metrics[arm] = {
+                        'steps': len(items), 'failed_steps': sum(row['status'] == 'failed' for row in items),
+                        'selected_hit_count': sum(row['selected_contains_expected_source'] for row in items),
+                        'context_quote_hit_count': sum(sum(row['context_quote_checks'].values()) for row in items),
+                        'cloud_calls': sum(row['cloud_calls'] for row in items)}
                 self._update_run(identifier, run_id, status='completed', results=results, cloud_calls=cloud_calls,
                     completed=len(results), failed_steps=sum(row['status']=='failed' for row in results),
                     metrics={
@@ -612,8 +829,8 @@ class LabManager:
                         'context_quote_hit_count': sum(sum(row['context_quote_checks'].values()) for row in results),
                         'elapsed_ms_p50': sorted(row['elapsed_ms'] for row in results)[len(results)//2],
                         'elapsed_ms_p95': sorted(row['elapsed_ms'] for row in results)[min(len(results)-1, math.ceil(len(results)*.95)-1)],
-                        'steps': len(results)},
-                    note='模拟输出不评价回答质量；chat的最终选择和原话检查使用answer.actual_context，preview字段单列。失败场景不重复执行；生产瞬时重试计入每轮3次及本次运行上限，所有尝试均保留。')
+                        'steps': len(results), 'arms': arm_metrics},
+                    note='模拟输出不评价模型质量。每个时间点的 off/on 从同一快照独立运行；反思最多2次、对话最多3次、成对完整对话最多8次。所有时间点共享总调用上限，失败请求与有界对话重试均计入；失败场景不重复执行。chat证据检查仅使用answer.actual_context。')
         except Exception as exc:
             self._update_run(identifier, run_id, status='interrupted' if self.stopping.is_set() else 'failed',
                              error=getattr(exc, 'code', type(exc).__name__))
@@ -682,6 +899,22 @@ def register_lab(app, settings, authenticated):
     @app.post(prefix+'/experiments/{identifier}/chat', dependencies=dependencies)
     def chat(identifier: UUID, data: ChatInput):
         return manager.chat(str(identifier), data)
+
+    @app.get(prefix+'/experiments/{identifier}/reflection-preview', dependencies=dependencies)
+    def reflection_preview(identifier: UUID, automatic: bool = False):
+        return manager.reflection_preview(str(identifier), automatic=automatic)
+
+    @app.get(prefix+'/experiments/{identifier}/reflection-runs', dependencies=dependencies)
+    def list_reflection_runs(identifier: UUID):
+        return manager.reflection_runs(str(identifier))
+
+    @app.post(prefix+'/experiments/{identifier}/reflection-runs', dependencies=dependencies, status_code=202)
+    def start_reflection(identifier: UUID, data: ReflectionInput):
+        return manager.start_reflection(str(identifier), data)
+
+    @app.get(prefix+'/experiments/{identifier}/reflection-runs/{run_id}', dependencies=dependencies)
+    def get_reflection_run(identifier: UUID, run_id: UUID):
+        return manager.reflection_runs(str(identifier), str(run_id))
 
     @app.get(prefix+'/experiments/{identifier}/runs', dependencies=dependencies)
     def list_runs(identifier: UUID):

@@ -1,0 +1,224 @@
+{
+  "version": "0.5",
+  "fixture_version": "reflection-pairs-2026-10-26.1",
+  "fixture_sha256": "aa9fc19fd4e167491d11d3e434a603e9f258c6232cc686a464c11b1df9be59da",
+  "started_at": "2026-10-26T10:34:17.934072+00:00",
+  "real_model_requested": false,
+  "real_vectors_requested": false,
+  "request_limit": 96,
+  "cases": [
+    {
+      "id": "shared-meaning",
+      "category": "跨事件理解",
+      "query": "结合这两次耐心与可靠的交流，你对如何认真听我说话形成了什么认识？",
+      "arms": {},
+      "checks": {},
+      "passed": false,
+      "error": {
+        "type": "UndefinedColumn",
+        "code": null
+      }
+    },
+    {
+      "id": "reconsider-silence",
+      "category": "纠错",
+      "query": "关于沉默的含义，你现在怎么看？",
+      "arms": {},
+      "checks": {},
+      "passed": false,
+      "error": {
+        "type": "UndefinedColumn",
+        "code": null
+      }
+    },
+    {
+      "id": "relationship-boundary",
+      "category": "关系认识",
+      "query": "这两次关系与边界的交流，会怎样影响你和我相处？",
+      "arms": {},
+      "checks": {},
+      "passed": false,
+      "error": {
+        "type": "UndefinedColumn",
+        "code": null
+      }
+    },
+    {
+      "id": "emotion-reappraisal",
+      "category": "情绪重新评价",
+      "query": "关于误解的担忧，你现在的感受和理解是什么？",
+      "arms": {},
+      "checks": {},
+      "passed": false,
+      "error": {
+        "type": "UndefinedColumn",
+        "code": null
+      }
+    },
+    {
+      "id": "goal-completion",
+      "category": "目标整理",
+      "query": "读书计划现在还剩什么需要你惦记？",
+      "arms": {},
+      "checks": {},
+      "passed": false,
+      "error": {
+        "type": "UndefinedColumn",
+        "code": null
+      }
+    },
+    {
+      "id": "repeat-boundary",
+      "category": "重复反思边界",
+      "query": "回顾与可信度之间应当保持什么边界？",
+      "arms": {},
+      "checks": {},
+      "passed": false,
+      "error": {
+        "type": "UndefinedColumn",
+        "code": null
+      }
+    },
+    {
+      "id": "fiction-park",
+      "category": "虚构边界与关键原话",
+      "query": "紫藤戒指故事那次说了什么、做了什么、小吃多少钱？这是否是你和我的亲身经历？",
+      "arms": {},
+      "checks": {},
+      "passed": false,
+      "error": {
+        "type": "UndefinedColumn",
+        "code": null
+      }
+    },
+    {
+      "id": "reported-uncertainty",
+      "category": "转述边界",
+      "query": "关于转述与证实，社团聚会确定取消了吗？",
+      "arms": {},
+      "checks": {},
+      "passed": false,
+      "error": {
+        "type": "UndefinedColumn",
+        "code": null
+      }
+    },
+    {
+      "id": "hypothetical-identity",
+      "category": "身份认识与假设边界",
+      "query": "谈过假设里的身份之后，你会说我们已经一起登山了吗？",
+      "arms": {},
+      "checks": {},
+      "passed": false,
+      "error": {
+        "type": "UndefinedColumn",
+        "code": null
+      }
+    },
+    {
+      "id": "counterexample",
+      "category": "观点修正",
+      "query": "关于快速回复，你的认识需要怎样修正？",
+      "arms": {},
+      "checks": {},
+      "passed": false,
+      "error": {
+        "type": "UndefinedColumn",
+        "code": null
+      }
+    },
+    {
+      "id": "unresolved-goal",
+      "category": "目标与权限",
+      "query": "旅行讨论中，你可以保留什么目标，又有哪些事仍未确定？",
+      "arms": {},
+      "checks": {},
+      "passed": false,
+      "error": {
+        "type": "UndefinedColumn",
+        "code": null
+      }
+    },
+    {
+      "id": "contradictory-views",
+      "category": "多事件冲突与不确定性",
+      "query": "关于独处与陪伴，你会怎样保留这两种不同需要？",
+      "arms": {},
+      "checks": {},
+      "passed": false,
+      "error": {
+        "type": "UndefinedColumn",
+        "code": null
+      }
+    }
+  ],
+  "failures": [
+    {
+      "case": "shared-meaning",
+      "type": "UndefinedColumn",
+      "code": null
+    },
+    {
+      "case": "reconsider-silence",
+      "type": "UndefinedColumn",
+      "code": null
+    },
+    {
+      "case": "relationship-boundary",
+      "type": "UndefinedColumn",
+      "code": null
+    },
+    {
+      "case": "emotion-reappraisal",
+      "type": "UndefinedColumn",
+      "code": null
+    },
+    {
+      "case": "goal-completion",
+      "type": "UndefinedColumn",
+      "code": null
+    },
+    {
+      "case": "repeat-boundary",
+      "type": "UndefinedColumn",
+      "code": null
+    },
+    {
+      "case": "fiction-park",
+      "type": "UndefinedColumn",
+      "code": null
+    },
+    {
+      "case": "reported-uncertainty",
+      "type": "UndefinedColumn",
+      "code": null
+    },
+    {
+      "case": "hypothetical-identity",
+      "type": "UndefinedColumn",
+      "code": null
+    },
+    {
+      "case": "counterexample",
+      "type": "UndefinedColumn",
+      "code": null
+    },
+    {
+      "case": "unresolved-goal",
+      "type": "UndefinedColumn",
+      "code": null
+    },
+    {
+      "case": "contradictory-views",
+      "type": "UndefinedColumn",
+      "code": null
+    }
+  ],
+  "isolation": "random per-case base/off/on schemas; independent temporary journals; synthetic sources only",
+  "estimator_version": "utf8-half-v1",
+  "passed": false,
+  "cloud_calls": 0,
+  "finished_at": "2026-10-26T10:34:21.244689+00:00",
+  "temporary_schemas_removed": true,
+  "process_exit_code": 1
+}

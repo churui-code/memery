@@ -7,6 +7,7 @@ from app.automatic import validate_decision, validate_reassessment
 from app.episodes import EpisodeProposal, locate_quote, source_hash, validate_episode_proposals
 from app.errors import MemoryError
 from app.life import SelfUpdate, ExperienceDescription
+from reflection_storage_helpers import drop_reflection_schema
 
 
 def proposal(quote='紫藤戒指', **changes):
@@ -381,6 +382,7 @@ def test_estimator_version_is_audited_and_v4_database_upgrade_is_additive(repo):
     with repo.pool.connection() as c:
         row=c.execute('SELECT * FROM model_calls WHERE id=%s',(call_id,)).fetchone()
         assert row['estimator_version']=='utf8-half-v1' and row['estimated_input_tokens']==123
+        drop_reflection_schema(c)
         c.execute('ALTER TABLE model_calls DROP COLUMN estimator_version')
         c.execute('DELETE FROM schema_migrations WHERE version=5')
     repo.migrate()
@@ -388,7 +390,7 @@ def test_estimator_version_is_audited_and_v4_database_upgrade_is_additive(repo):
     with repo.pool.connection() as c:
         row=c.execute('SELECT * FROM model_calls WHERE id=%s',(call_id,)).fetchone()
         assert row['phase']=='intake' and row['estimator_version'] is None
-        assert c.execute('SELECT max(version) AS version FROM schema_migrations').fetchone()['version']==5
+        assert c.execute('SELECT max(version) AS version FROM schema_migrations').fetchone()['version']==6
 
 
 def test_v3_archive_upgrade_preserves_original_content_and_times_and_backfills_locally(repo):
@@ -407,6 +409,7 @@ def test_v3_archive_upgrade_preserves_original_content_and_times_and_backfills_l
         c.execute('''UPDATE experiences SET recorded_at=%s,occurred_at=%s,
             anchors=jsonb_build_array((anchors->0) - 'occurrence') WHERE id=%s''',
             (recorded_at,occurred_at,experience_id))
+        drop_reflection_schema(c)
         for table in ('episode_details','episode_cues','episode_evidence','episode_versions',
                       'episode_associations','episode_rehearsals','episode_chunks','episode_jobs','episodes'):
             c.execute(sql.SQL('DROP TABLE {}').format(sql.Identifier(table)))
@@ -428,7 +431,7 @@ def test_v3_archive_upgrade_preserves_original_content_and_times_and_backfills_l
                 assert after[field]==value,field
             assert after['source_hash']==source_hash(user_text,assistant_text)
             assert after['revision']==1
-            assert c.execute('SELECT max(version) AS version FROM schema_migrations').fetchone()['version']==5
+            assert c.execute('SELECT max(version) AS version FROM schema_migrations').fetchone()['version']==6
             assert c.execute('SELECT count(*) AS n FROM episodes').fetchone()['n']==0
     assert repo.backfill_episodes()==1
     assert repo.backfill_episodes()==0

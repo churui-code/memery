@@ -1,0 +1,1105 @@
+{
+  "run_id": "20261026T223749524748Z-77ddb189",
+  "started_at": "2026-10-26T22:37:49.525383+00:00",
+  "project": "home-memory-v05-upgrade",
+  "directory": "data/qa/reflection-upgrade-20261026T223749524748Z-77ddb189",
+  "isolation": "fresh internal Compose network, database cluster, secrets and independent deletion journal; synthetic records only",
+  "cloud_requests": 0,
+  "api_worker_reflector_started": false,
+  "simulated_call_audit_note": "Repository call reservations only; no model client or network request",
+  "checks": {
+    "internal_network_no_published_ports": true,
+    "actual_v04_nonempty_schema5_encrypted_backup": true,
+    "schema5_to6_original_counts_and_digests_unchanged": true,
+    "automatic_reflection_off_after_upgrade": true,
+    "failed_call_attempts_spend_real_day_quota": true,
+    "pending_snapshot_cancelled_and_quota_preserved": true,
+    "running_snapshot_cancelled_and_quota_preserved": true,
+    "old_schema5_backup_cannot_resurrect_deleted_source_chain": true,
+    "schema5_restore_preserves_live_schema6_quota": true,
+    "independent_journal_unchanged_and_replay_idempotent": true,
+    "no_cloud_client_or_background_services": true,
+    "isolated_compose_down_data_preserved": true
+  },
+  "backups": [
+    {
+      "path": "data/qa/reflection-upgrade-20261026T223749524748Z-77ddb189/backups/schema5-before-upgrade.hmem",
+      "bytes": 57297,
+      "sha256": "96eaf0d36e56c57cebc7e26a2f28360c518369f1a317e8497a0dd870c547a3e2",
+      "source_database": "memory",
+      "encryption_image": "old"
+    },
+    {
+      "path": "data/qa/reflection-upgrade-20261026T223749524748Z-77ddb189/backups/schema6-pending.hmem",
+      "bytes": 67744,
+      "sha256": "02181861a0db0135be6f6e747dbb7290cc695be0794682f585ccc903253ae953",
+      "source_database": "upgrade_current",
+      "encryption_image": "new"
+    },
+    {
+      "path": "data/qa/reflection-upgrade-20261026T223749524748Z-77ddb189/backups/schema6-running.hmem",
+      "bytes": 68488,
+      "sha256": "32a97580e53de0b135d247773d2ccf9a633fbb349568cdfa5962895b5a38b1ec",
+      "source_database": "upgrade_current",
+      "encryption_image": "new"
+    }
+  ],
+  "passed": true,
+  "failures": [],
+  "stage": "关闭隔离 Compose 项目，保留数据库、删除账本、密钥与加密备份",
+  "images": {
+    "old": {
+      "requested": "home-memory:0.4",
+      "id": "sha256:b9faa58846bcff264848460b9c23289c35554d21006c4d7dc0f061ca5959b1eb"
+    },
+    "new": {
+      "requested": "home-memory:0.5",
+      "id": "sha256:c8e63a8fb599ebf5855b882dde969d10eb74d75026b890923046d03989e66cde"
+    },
+    "database": {
+      "requested": "pgvector/pgvector:pg16@sha256:ccc6e83d6e35e931dc7c5def2022729d5a6c370318d099181995567ff1fb4d6b",
+      "id": "sha256:ccc6e83d6e35e931dc7c5def2022729d5a6c370318d099181995567ff1fb4d6b"
+    }
+  },
+  "before": {
+    "schema": 5,
+    "ids": {
+      "memory_id": "18283551-e1e7-40c3-8fc3-afab24cae715",
+      "experience_id": "e841b178-1bc7-4f85-af59-07b025883752",
+      "episode_id": "4741c91a-2bc3-4548-910c-e72dfd5995c8",
+      "self_id": "de72dc66-4a84-4534-a816-a5edf1664589"
+    },
+    "snapshot": {
+      "memories": {
+        "columns": [
+          "id",
+          "text",
+          "terms",
+          "speaker_id",
+          "subject",
+          "allow_cloud",
+          "revision",
+          "valid_from",
+          "valid_until",
+          "created_at",
+          "updated_at",
+          "deleted_at",
+          "idempotency_key",
+          "request_hash",
+          "origin",
+          "kind"
+        ],
+        "count": 1,
+        "sha256": "6e85d5f21cdf77ec23dcbca7ab7f8d235ece3dd0cfe89df2d60b8c315d87c6e7"
+      },
+      "events": {
+        "columns": [
+          "id",
+          "memory_id",
+          "revision",
+          "operation",
+          "content",
+          "created_at"
+        ],
+        "count": 1,
+        "sha256": "241b62910ae0909abba1bfbc278f2041bea9995aa80fa63481e5ecbb0b8fcdff"
+      },
+      "memory_evidence": {
+        "columns": [
+          "memory_id",
+          "revision",
+          "conversation_id",
+          "quote",
+          "created_at"
+        ],
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "experiences": {
+        "columns": [
+          "id",
+          "conversation_id",
+          "user_text",
+          "assistant_text",
+          "title",
+          "summary",
+          "context_type",
+          "participants",
+          "anchors",
+          "significance",
+          "terms",
+          "recorded_at",
+          "occurred_at",
+          "time_quote",
+          "allow_cloud",
+          "context_stale",
+          "deleted_at",
+          "legacy_message_id",
+          "revision",
+          "source_hash"
+        ],
+        "count": 1,
+        "sha256": "959ec98323ee44fad9c253469351fcca634c638961cab945af2cda8e6b20a85d"
+      },
+      "messages": {
+        "columns": [
+          "id",
+          "conversation_id",
+          "role",
+          "content",
+          "source_ids",
+          "created_at",
+          "experience_id"
+        ],
+        "count": 2,
+        "sha256": "23f8f8e3a3500a79b124f253517cc1616d8f5f6fe2760a04d99e717a2b01f19d"
+      },
+      "episodes": {
+        "columns": [
+          "id",
+          "title",
+          "gist",
+          "context_type",
+          "importance",
+          "importance_reason",
+          "emotional_salience",
+          "emotional_reason",
+          "participants",
+          "terms",
+          "occurred_at",
+          "occurred_until",
+          "time_quote",
+          "time_precision",
+          "source_reliability",
+          "encoding_version",
+          "recorded_at",
+          "updated_at",
+          "last_rehearsed_at",
+          "revision",
+          "source_hash",
+          "local_fallback",
+          "allow_cloud",
+          "context_stale",
+          "deleted_at"
+        ],
+        "count": 1,
+        "sha256": "89bc07892d69e2d3a1536d0c1978b18bb4c4130f4ea48dd98e9c7cec1e22ca72"
+      },
+      "episode_evidence": {
+        "columns": [
+          "id",
+          "episode_id",
+          "experience_id",
+          "role",
+          "quote",
+          "start_offset",
+          "end_offset",
+          "source_revision",
+          "source_hash"
+        ],
+        "count": 3,
+        "sha256": "ae2a139bc86a84f7c0592b2ec80e101b068ef16a60d3096b844bc4209f11c096"
+      },
+      "episode_details": {
+        "columns": [
+          "id",
+          "episode_id",
+          "evidence_id",
+          "kind",
+          "meaning",
+          "importance",
+          "emotional_salience",
+          "importance_reason",
+          "emotional_reason",
+          "source_reliability"
+        ],
+        "count": 2,
+        "sha256": "871e871d965cfbd191e47ce4df5b64eeadcdb89b8bb742966b6e12ae83a51c99"
+      },
+      "episode_cues": {
+        "columns": [
+          "id",
+          "episode_id",
+          "evidence_id",
+          "kind",
+          "text"
+        ],
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "episode_versions": {
+        "columns": [
+          "episode_id",
+          "revision",
+          "title",
+          "gist",
+          "importance",
+          "importance_reason",
+          "emotional_salience",
+          "emotional_reason",
+          "source_hash",
+          "created_at",
+          "source_reliability",
+          "encoding_version",
+          "time_precision",
+          "occurred_at",
+          "occurred_until",
+          "time_quote"
+        ],
+        "count": 1,
+        "sha256": "42f0cfaad244a49d601f427af8cfc4e59e3eebdbdee1ff2e98008862300280dc"
+      },
+      "episode_associations": {
+        "columns": [
+          "source_id",
+          "target_id",
+          "kind"
+        ],
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "episode_rehearsals": {
+        "columns": [
+          "episode_id",
+          "experience_id",
+          "kind",
+          "recalled_at"
+        ],
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "self_observations": {
+        "columns": [
+          "id",
+          "domain",
+          "state_key",
+          "revision",
+          "text",
+          "reason",
+          "evidence_quote",
+          "confidence",
+          "intensity",
+          "half_life_hours",
+          "created_at",
+          "invalidated_at",
+          "deleted_at"
+        ],
+        "count": 1,
+        "sha256": "031ff7e6f64f666a1c121f1680f96ee34dbf9a3957d1c1c7b545293c9f873ba6"
+      },
+      "context_links": {
+        "columns": [
+          "source_type",
+          "source_id",
+          "target_type",
+          "target_id"
+        ],
+        "count": 3,
+        "sha256": "b78a475d0a239702ae1a2d63b98464e161a509c25339159881a3347b7925f763"
+      }
+    },
+    "model_call_count": 0
+  },
+  "first_replay": {
+    "replayed": 0,
+    "health": {
+      "database": "ok",
+      "version": "0.5.0",
+      "automatic_memory": true,
+      "memories": 1,
+      "episodes": 1,
+      "episode_index_jobs": {
+        "pending": 1
+      },
+      "experiences": 1,
+      "experience_retention": "until_deleted",
+      "experience_index_jobs": {
+        "pending": 1
+      },
+      "index_jobs": {
+        "pending": 1
+      },
+      "model": "MiniMax-M3"
+    }
+  },
+  "after": {
+    "schema": 6,
+    "snapshot": {
+      "memories": {
+        "columns": [
+          "id",
+          "text",
+          "terms",
+          "speaker_id",
+          "subject",
+          "allow_cloud",
+          "revision",
+          "valid_from",
+          "valid_until",
+          "created_at",
+          "updated_at",
+          "deleted_at",
+          "idempotency_key",
+          "request_hash",
+          "origin",
+          "kind"
+        ],
+        "count": 1,
+        "sha256": "6e85d5f21cdf77ec23dcbca7ab7f8d235ece3dd0cfe89df2d60b8c315d87c6e7"
+      },
+      "events": {
+        "columns": [
+          "id",
+          "memory_id",
+          "revision",
+          "operation",
+          "content",
+          "created_at"
+        ],
+        "count": 1,
+        "sha256": "241b62910ae0909abba1bfbc278f2041bea9995aa80fa63481e5ecbb0b8fcdff"
+      },
+      "memory_evidence": {
+        "columns": [
+          "memory_id",
+          "revision",
+          "conversation_id",
+          "quote",
+          "created_at"
+        ],
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "experiences": {
+        "columns": [
+          "id",
+          "conversation_id",
+          "user_text",
+          "assistant_text",
+          "title",
+          "summary",
+          "context_type",
+          "participants",
+          "anchors",
+          "significance",
+          "terms",
+          "recorded_at",
+          "occurred_at",
+          "time_quote",
+          "allow_cloud",
+          "context_stale",
+          "deleted_at",
+          "legacy_message_id",
+          "revision",
+          "source_hash"
+        ],
+        "count": 1,
+        "sha256": "959ec98323ee44fad9c253469351fcca634c638961cab945af2cda8e6b20a85d"
+      },
+      "messages": {
+        "columns": [
+          "id",
+          "conversation_id",
+          "role",
+          "content",
+          "source_ids",
+          "created_at",
+          "experience_id"
+        ],
+        "count": 2,
+        "sha256": "23f8f8e3a3500a79b124f253517cc1616d8f5f6fe2760a04d99e717a2b01f19d"
+      },
+      "episodes": {
+        "columns": [
+          "id",
+          "title",
+          "gist",
+          "context_type",
+          "importance",
+          "importance_reason",
+          "emotional_salience",
+          "emotional_reason",
+          "participants",
+          "terms",
+          "occurred_at",
+          "occurred_until",
+          "time_quote",
+          "time_precision",
+          "source_reliability",
+          "encoding_version",
+          "recorded_at",
+          "updated_at",
+          "last_rehearsed_at",
+          "revision",
+          "source_hash",
+          "local_fallback",
+          "allow_cloud",
+          "context_stale",
+          "deleted_at"
+        ],
+        "count": 1,
+        "sha256": "89bc07892d69e2d3a1536d0c1978b18bb4c4130f4ea48dd98e9c7cec1e22ca72"
+      },
+      "episode_evidence": {
+        "columns": [
+          "id",
+          "episode_id",
+          "experience_id",
+          "role",
+          "quote",
+          "start_offset",
+          "end_offset",
+          "source_revision",
+          "source_hash"
+        ],
+        "count": 3,
+        "sha256": "ae2a139bc86a84f7c0592b2ec80e101b068ef16a60d3096b844bc4209f11c096"
+      },
+      "episode_details": {
+        "columns": [
+          "id",
+          "episode_id",
+          "evidence_id",
+          "kind",
+          "meaning",
+          "importance",
+          "emotional_salience",
+          "importance_reason",
+          "emotional_reason",
+          "source_reliability"
+        ],
+        "count": 2,
+        "sha256": "871e871d965cfbd191e47ce4df5b64eeadcdb89b8bb742966b6e12ae83a51c99"
+      },
+      "episode_cues": {
+        "columns": [
+          "id",
+          "episode_id",
+          "evidence_id",
+          "kind",
+          "text"
+        ],
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "episode_versions": {
+        "columns": [
+          "episode_id",
+          "revision",
+          "title",
+          "gist",
+          "importance",
+          "importance_reason",
+          "emotional_salience",
+          "emotional_reason",
+          "source_hash",
+          "created_at",
+          "source_reliability",
+          "encoding_version",
+          "time_precision",
+          "occurred_at",
+          "occurred_until",
+          "time_quote"
+        ],
+        "count": 1,
+        "sha256": "42f0cfaad244a49d601f427af8cfc4e59e3eebdbdee1ff2e98008862300280dc"
+      },
+      "episode_associations": {
+        "columns": [
+          "source_id",
+          "target_id",
+          "kind"
+        ],
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "episode_rehearsals": {
+        "columns": [
+          "episode_id",
+          "experience_id",
+          "kind",
+          "recalled_at"
+        ],
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "self_observations": {
+        "columns": [
+          "id",
+          "domain",
+          "state_key",
+          "revision",
+          "text",
+          "reason",
+          "evidence_quote",
+          "confidence",
+          "intensity",
+          "half_life_hours",
+          "created_at",
+          "invalidated_at",
+          "deleted_at"
+        ],
+        "count": 1,
+        "sha256": "031ff7e6f64f666a1c121f1680f96ee34dbf9a3957d1c1c7b545293c9f873ba6"
+      },
+      "context_links": {
+        "columns": [
+          "source_type",
+          "source_id",
+          "target_type",
+          "target_id"
+        ],
+        "count": 3,
+        "sha256": "b78a475d0a239702ae1a2d63b98464e161a509c25339159881a3347b7925f763"
+      }
+    },
+    "enabled": false,
+    "quota": {
+      "version": 1,
+      "source_schema": 6,
+      "days": []
+    },
+    "conversation_generation_preserved": true
+  },
+  "quota_after_first_failed_request": {
+    "version": 1,
+    "source_schema": 6,
+    "days": [
+      {
+        "day": "2026-10-27",
+        "rounds": 1,
+        "calls": 1
+      }
+    ]
+  },
+  "quota_at_running_snapshot": {
+    "version": 1,
+    "source_schema": 6,
+    "days": [
+      {
+        "day": "2026-10-27",
+        "rounds": 2,
+        "calls": 2
+      }
+    ]
+  },
+  "live_quota_after_later_failure": {
+    "version": 1,
+    "source_schema": 6,
+    "days": [
+      {
+        "day": "2026-10-27",
+        "rounds": 2,
+        "calls": 3
+      }
+    ]
+  },
+  "pending_restored": {
+    "cancelled": "659f9c08-5c15-42e3-ba9f-80bedb405726",
+    "enabled": false,
+    "quota": {
+      "version": 1,
+      "source_schema": 6,
+      "days": [
+        {
+          "day": "2026-10-27",
+          "rounds": 2,
+          "calls": 3
+        }
+      ]
+    },
+    "running_calls_interrupted": true,
+    "snapshot": {
+      "memories": {
+        "columns": [
+          "id",
+          "text",
+          "terms",
+          "speaker_id",
+          "subject",
+          "allow_cloud",
+          "revision",
+          "valid_from",
+          "valid_until",
+          "created_at",
+          "updated_at",
+          "deleted_at",
+          "idempotency_key",
+          "request_hash",
+          "origin",
+          "kind"
+        ],
+        "count": 1,
+        "sha256": "6e85d5f21cdf77ec23dcbca7ab7f8d235ece3dd0cfe89df2d60b8c315d87c6e7"
+      },
+      "events": {
+        "columns": [
+          "id",
+          "memory_id",
+          "revision",
+          "operation",
+          "content",
+          "created_at"
+        ],
+        "count": 1,
+        "sha256": "241b62910ae0909abba1bfbc278f2041bea9995aa80fa63481e5ecbb0b8fcdff"
+      },
+      "memory_evidence": {
+        "columns": [
+          "memory_id",
+          "revision",
+          "conversation_id",
+          "quote",
+          "created_at"
+        ],
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "experiences": {
+        "columns": [
+          "id",
+          "conversation_id",
+          "user_text",
+          "assistant_text",
+          "title",
+          "summary",
+          "context_type",
+          "participants",
+          "anchors",
+          "significance",
+          "terms",
+          "recorded_at",
+          "occurred_at",
+          "time_quote",
+          "allow_cloud",
+          "context_stale",
+          "deleted_at",
+          "legacy_message_id",
+          "revision",
+          "source_hash"
+        ],
+        "count": 1,
+        "sha256": "959ec98323ee44fad9c253469351fcca634c638961cab945af2cda8e6b20a85d"
+      },
+      "messages": {
+        "columns": [
+          "id",
+          "conversation_id",
+          "role",
+          "content",
+          "source_ids",
+          "created_at",
+          "experience_id"
+        ],
+        "count": 2,
+        "sha256": "23f8f8e3a3500a79b124f253517cc1616d8f5f6fe2760a04d99e717a2b01f19d"
+      },
+      "episodes": {
+        "columns": [
+          "id",
+          "title",
+          "gist",
+          "context_type",
+          "importance",
+          "importance_reason",
+          "emotional_salience",
+          "emotional_reason",
+          "participants",
+          "terms",
+          "occurred_at",
+          "occurred_until",
+          "time_quote",
+          "time_precision",
+          "source_reliability",
+          "encoding_version",
+          "recorded_at",
+          "updated_at",
+          "last_rehearsed_at",
+          "revision",
+          "source_hash",
+          "local_fallback",
+          "allow_cloud",
+          "context_stale",
+          "deleted_at"
+        ],
+        "count": 1,
+        "sha256": "89bc07892d69e2d3a1536d0c1978b18bb4c4130f4ea48dd98e9c7cec1e22ca72"
+      },
+      "episode_evidence": {
+        "columns": [
+          "id",
+          "episode_id",
+          "experience_id",
+          "role",
+          "quote",
+          "start_offset",
+          "end_offset",
+          "source_revision",
+          "source_hash"
+        ],
+        "count": 3,
+        "sha256": "ae2a139bc86a84f7c0592b2ec80e101b068ef16a60d3096b844bc4209f11c096"
+      },
+      "episode_details": {
+        "columns": [
+          "id",
+          "episode_id",
+          "evidence_id",
+          "kind",
+          "meaning",
+          "importance",
+          "emotional_salience",
+          "importance_reason",
+          "emotional_reason",
+          "source_reliability"
+        ],
+        "count": 2,
+        "sha256": "871e871d965cfbd191e47ce4df5b64eeadcdb89b8bb742966b6e12ae83a51c99"
+      },
+      "episode_cues": {
+        "columns": [
+          "id",
+          "episode_id",
+          "evidence_id",
+          "kind",
+          "text"
+        ],
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "episode_versions": {
+        "columns": [
+          "episode_id",
+          "revision",
+          "title",
+          "gist",
+          "importance",
+          "importance_reason",
+          "emotional_salience",
+          "emotional_reason",
+          "source_hash",
+          "created_at",
+          "source_reliability",
+          "encoding_version",
+          "time_precision",
+          "occurred_at",
+          "occurred_until",
+          "time_quote"
+        ],
+        "count": 1,
+        "sha256": "42f0cfaad244a49d601f427af8cfc4e59e3eebdbdee1ff2e98008862300280dc"
+      },
+      "episode_associations": {
+        "columns": [
+          "source_id",
+          "target_id",
+          "kind"
+        ],
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "episode_rehearsals": {
+        "columns": [
+          "episode_id",
+          "experience_id",
+          "kind",
+          "recalled_at"
+        ],
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "self_observations": {
+        "columns": [
+          "id",
+          "domain",
+          "state_key",
+          "revision",
+          "text",
+          "reason",
+          "evidence_quote",
+          "confidence",
+          "intensity",
+          "half_life_hours",
+          "created_at",
+          "invalidated_at",
+          "deleted_at"
+        ],
+        "count": 1,
+        "sha256": "031ff7e6f64f666a1c121f1680f96ee34dbf9a3957d1c1c7b545293c9f873ba6"
+      },
+      "context_links": {
+        "columns": [
+          "source_type",
+          "source_id",
+          "target_type",
+          "target_id"
+        ],
+        "count": 3,
+        "sha256": "b78a475d0a239702ae1a2d63b98464e161a509c25339159881a3347b7925f763"
+      }
+    }
+  },
+  "running_restored": {
+    "cancelled": "b7d29a14-30fb-4ea0-b5af-eabb831f1848",
+    "enabled": false,
+    "quota": {
+      "version": 1,
+      "source_schema": 6,
+      "days": [
+        {
+          "day": "2026-10-27",
+          "rounds": 2,
+          "calls": 3
+        }
+      ]
+    },
+    "running_calls_interrupted": true,
+    "snapshot": {
+      "memories": {
+        "columns": [
+          "id",
+          "text",
+          "terms",
+          "speaker_id",
+          "subject",
+          "allow_cloud",
+          "revision",
+          "valid_from",
+          "valid_until",
+          "created_at",
+          "updated_at",
+          "deleted_at",
+          "idempotency_key",
+          "request_hash",
+          "origin",
+          "kind"
+        ],
+        "count": 1,
+        "sha256": "6e85d5f21cdf77ec23dcbca7ab7f8d235ece3dd0cfe89df2d60b8c315d87c6e7"
+      },
+      "events": {
+        "columns": [
+          "id",
+          "memory_id",
+          "revision",
+          "operation",
+          "content",
+          "created_at"
+        ],
+        "count": 1,
+        "sha256": "241b62910ae0909abba1bfbc278f2041bea9995aa80fa63481e5ecbb0b8fcdff"
+      },
+      "memory_evidence": {
+        "columns": [
+          "memory_id",
+          "revision",
+          "conversation_id",
+          "quote",
+          "created_at"
+        ],
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "experiences": {
+        "columns": [
+          "id",
+          "conversation_id",
+          "user_text",
+          "assistant_text",
+          "title",
+          "summary",
+          "context_type",
+          "participants",
+          "anchors",
+          "significance",
+          "terms",
+          "recorded_at",
+          "occurred_at",
+          "time_quote",
+          "allow_cloud",
+          "context_stale",
+          "deleted_at",
+          "legacy_message_id",
+          "revision",
+          "source_hash"
+        ],
+        "count": 1,
+        "sha256": "959ec98323ee44fad9c253469351fcca634c638961cab945af2cda8e6b20a85d"
+      },
+      "messages": {
+        "columns": [
+          "id",
+          "conversation_id",
+          "role",
+          "content",
+          "source_ids",
+          "created_at",
+          "experience_id"
+        ],
+        "count": 2,
+        "sha256": "23f8f8e3a3500a79b124f253517cc1616d8f5f6fe2760a04d99e717a2b01f19d"
+      },
+      "episodes": {
+        "columns": [
+          "id",
+          "title",
+          "gist",
+          "context_type",
+          "importance",
+          "importance_reason",
+          "emotional_salience",
+          "emotional_reason",
+          "participants",
+          "terms",
+          "occurred_at",
+          "occurred_until",
+          "time_quote",
+          "time_precision",
+          "source_reliability",
+          "encoding_version",
+          "recorded_at",
+          "updated_at",
+          "last_rehearsed_at",
+          "revision",
+          "source_hash",
+          "local_fallback",
+          "allow_cloud",
+          "context_stale",
+          "deleted_at"
+        ],
+        "count": 1,
+        "sha256": "89bc07892d69e2d3a1536d0c1978b18bb4c4130f4ea48dd98e9c7cec1e22ca72"
+      },
+      "episode_evidence": {
+        "columns": [
+          "id",
+          "episode_id",
+          "experience_id",
+          "role",
+          "quote",
+          "start_offset",
+          "end_offset",
+          "source_revision",
+          "source_hash"
+        ],
+        "count": 3,
+        "sha256": "ae2a139bc86a84f7c0592b2ec80e101b068ef16a60d3096b844bc4209f11c096"
+      },
+      "episode_details": {
+        "columns": [
+          "id",
+          "episode_id",
+          "evidence_id",
+          "kind",
+          "meaning",
+          "importance",
+          "emotional_salience",
+          "importance_reason",
+          "emotional_reason",
+          "source_reliability"
+        ],
+        "count": 2,
+        "sha256": "871e871d965cfbd191e47ce4df5b64eeadcdb89b8bb742966b6e12ae83a51c99"
+      },
+      "episode_cues": {
+        "columns": [
+          "id",
+          "episode_id",
+          "evidence_id",
+          "kind",
+          "text"
+        ],
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "episode_versions": {
+        "columns": [
+          "episode_id",
+          "revision",
+          "title",
+          "gist",
+          "importance",
+          "importance_reason",
+          "emotional_salience",
+          "emotional_reason",
+          "source_hash",
+          "created_at",
+          "source_reliability",
+          "encoding_version",
+          "time_precision",
+          "occurred_at",
+          "occurred_until",
+          "time_quote"
+        ],
+        "count": 1,
+        "sha256": "42f0cfaad244a49d601f427af8cfc4e59e3eebdbdee1ff2e98008862300280dc"
+      },
+      "episode_associations": {
+        "columns": [
+          "source_id",
+          "target_id",
+          "kind"
+        ],
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "episode_rehearsals": {
+        "columns": [
+          "episode_id",
+          "experience_id",
+          "kind",
+          "recalled_at"
+        ],
+        "count": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "self_observations": {
+        "columns": [
+          "id",
+          "domain",
+          "state_key",
+          "revision",
+          "text",
+          "reason",
+          "evidence_quote",
+          "confidence",
+          "intensity",
+          "half_life_hours",
+          "created_at",
+          "invalidated_at",
+          "deleted_at"
+        ],
+        "count": 1,
+        "sha256": "031ff7e6f64f666a1c121f1680f96ee34dbf9a3957d1c1c7b545293c9f873ba6"
+      },
+      "context_links": {
+        "columns": [
+          "source_type",
+          "source_id",
+          "target_type",
+          "target_id"
+        ],
+        "count": 3,
+        "sha256": "b78a475d0a239702ae1a2d63b98464e161a509c25339159881a3347b7925f763"
+      }
+    }
+  },
+  "deletion_restore": {
+    "source_and_dependencies_invisible": true,
+    "stored_text_scrubbed": true,
+    "quota": {
+      "version": 1,
+      "source_schema": 6,
+      "days": [
+        {
+          "day": "2026-10-27",
+          "rounds": 2,
+          "calls": 3
+        }
+      ]
+    },
+    "enabled": false
+  },
+  "finished_at": "2026-10-26T22:50:52.106531+00:00",
+  "seconds": 27.32
+}
