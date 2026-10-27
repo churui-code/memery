@@ -455,11 +455,44 @@ class ReflectionRepository:
     def _validate_reflection_submission(c,run,updates,review,audit,phases):
         # Reconstruct only the validation inputs from frozen persisted metadata.
         # Neither the original proposal nor the review notes are stored here.
+        from app.episodes import source_hash
         payload={'episodes':[], 'self_state':[], 'target_versions':run['target_versions']}
+        frozen_spans={}
+        for ref in run['source_manifest']:
+            if ref['source_type']=='experience':
+                frozen_spans.setdefault(ref['id'],[]).extend(ref.get('spans',[]))
+        sources={}
         for ref in run['source_manifest']:
             if ref['source_type']=='episode':
+                evidence=c.execute('SELECT * FROM episode_evidence WHERE episode_id=%s AND id=ANY(%s::uuid[])',
+                    (ref['id'],ref.get('evidence_ids',[]))).fetchall()
+                if len(evidence)!=len(ref.get('evidence_ids',[])):
+                    raise MemoryError('reflection_source_changed','整理引文已失效。',409)
+                verified=[]
+                for row in evidence:
+                    eid,sid=str(row['id']),str(row['experience_id'])
+                    span=next((span for span in frozen_spans.get(sid,[])
+                               if span.get('id',span.get('evidence_id'))==eid),None)
+                    if sid not in sources:
+                        sources[sid]=c.execute('SELECT * FROM experiences WHERE id=%s',(sid,)).fetchone()
+                    source=sources[sid]
+                    start,end=row['start_offset'],row['end_offset']
+                    if (not span or not source or row['role']!='user' or span.get('role')!='user'
+                        or source['deleted_at'] or source['context_stale'] or not source['allow_cloud']
+                        or type(start) is not int or type(end) is not int
+                        or not 0<=start<end<=len(source['user_text'])
+                        or (start,end)!=(span.get('start'),span.get('end'))
+                        or row['source_revision']!=span.get('source_revision')
+                        or row['source_revision']!=source['revision']
+                        or row['source_hash']!=span.get('source_hash')
+                        or row['source_hash']!=source['source_hash']
+                        or row['source_hash']!=source_hash(source['user_text'],source['assistant_text'])
+                        or row['quote']!=source['user_text'][start:end]
+                        or content_hash(row['quote'])!=span.get('hash')):
+                        raise MemoryError('reflection_source_changed','整理引文与冻结原文不一致。',409)
+                    verified.append({**row,'id':eid,'quote':source['user_text'][start:end]})
                 payload['episodes'].append({'pending':ref['id'] in run['pending_ids'],
-                    'evidence':[{'id':eid} for eid in ref.get('evidence_ids',[])]})
+                    'evidence':verified})
             elif ref['source_type']=='self' and ref.get('as_of'):
                 row=c.execute('SELECT * FROM self_observations WHERE id=%s',(ref['id'],)).fetchone()
                 payload['self_state'].append(observation_view(row,at=datetime.fromisoformat(ref['as_of'])))

@@ -14,7 +14,7 @@ from app.recall import lexical_terms
 from app.reflection_types import validate_reflection_proposal, validate_reflection_review, reflection_review_units
 
 
-POLICY_VERSION = 'reflection-v1.2'
+POLICY_VERSION = 'reflection-v1.5'
 MAX_PENDING = 12
 MAX_EPISODES = 24
 MAX_CALLS = 2
@@ -27,9 +27,11 @@ PROPOSAL_SYSTEM = '''你是持续发展的 AI 的离线反思器，必须调用 
 只提出有必要的 emotion/relationship/identity/belief/goal 内部解释，不新增用户事实，不改写经历、重要性、可信度或重提次数。
 最多8条 updates。没有必要更新时也必须调用 propose_reflection，工具参数为 {"updates":[]}；不得裸输出[]、正文或省略工具调用。
 每条须引用实际展示的 evidence_ids，且至少一个来自 pending 事件。不输出或改写 quote。
+text和reason中的每个事实前提都须由该条自身的evidence_ids支持；跨事件比较必须同时引用双方，其他提案引用过不算本条引用。引用ID从工具枚举逐字复制，不得拼接或使用状态ID。
+保留原文的限定与条件，不把“有时”改成“倾向于”，不把“尚未收到”改成“正在等”，不将尚未确认推导成某一种确认途径是唯一途径。未知事项列为未知，不把未知的日期、资料等添加为继续目标的新门槛。难以准确表达的提案应省略。
 提案自身 id 使用独立编号 p1、p2 等，不是事件、证据或状态ID。同一认识沿用 target_versions 的 domain 和 key，并把该目标的 id 填到 target_id、revision 填到 expected_revision；不要输出 revision 字段。新键 target_id=null、expected_revision=0。同一键只能一条。
 target_versions 仅是目标版本元信息；未出现在 self_state 的目标正文已失效，不可猜测旧观点或把目标元信息当作证据。
-首次形成认识、修订已有认识、收束已完成或暂缓的目标均可成立。没有旧认识不构成拒绝新认识的理由，不必强造转变。reason 说明新原文支持了什么形成、修订或收束，并明确仍未知的部分。
+首次形成认识、修订已有认识、收束已完成或暂缓的目标均可成立。未展示旧认识不构成拒绝理由，也不证明此前从未有过认识；不要强造转变或否定历史。reason只说明所引原文支持的形成、修订或收束，不必罗列未知。需要指出未知时，先核对原文与来源已明确的部分；标注为作品或假设的材料不能被说成缺少虚构边界。
 重复总结、检索命中、过去反思或助手复述不算新依据。没有实质新增时返回空 updates；不要为了反思而变化，也不制造新的事实。
 严格区分来源角色和叙述主体。role=user 的第一人称“我”指用户，不能移植成 AI 的身体、经历或感受。用户说“我疲惫”“我想独处”不等于 AI 疲惫或想独处；可以形成“我理解用户有时需要独处”的认识。
 AI 可以对事情形成自己的评价和情绪解释，但必须说明新原文与该评价的关系，不能继承用户的身体状态、感觉、个人经历或无依据断言用户未表达的内心。
@@ -41,10 +43,12 @@ AI 可以对事情形成自己的评价和情绪解释，但必须说明新原�
 REVIEW_SYSTEM = '''你是独立的反思复核器，必须调用 review_reflection 工具。
 证据集与提案均已冻结。服务端已把每条提案的text和reason分为review_units完整句单元。对每条proposal只返回一次{proposal_id,accept,reason,checks}，不得修改、补充提案或检索。
 checks必须逐个覆盖该proposal的全部review_units，每unit_id恰好一次，不得漏句、合并单元或挑选容易支持的部分。每项为{unit_id,support,evidence_ids,note}；evidence_ids必须非空且只能取该proposal原有引用，note仅简短说明对应证据及判定，不输出思考过程。
+proposal_evidence列出了每个提案可用的原文；逐句只据该条证据判断。别的提案、目标状态ID或本条未引用的事件不能补足其事实前提。跨事件比较须由本条同时引用的双方原文支持。ID须逐字复制枚举。
+对有限频率、排他条件、前置条件采取保守判定：“有时”不能改成“倾向于”，“尚未收到”不证明“在等”；未确认不证明只有某种途径能确认；未知日期或资料不能自动变成继续目标的门槛。标记interpretation也不能豁免这些检查。
 support只能取supported（原文直接支持）、interpretation（明确属于AI自己的有限解释，全部事实前提有依据）、unsupported（缺少依据）或conflict（与原文冲突）。不能把捏造的事实前提藏在interpretation里。只要任一单元unsupported/conflict，accept必须false；仅当全部单元supported/interpretation时accept才可true。
 对每个完整单元逐项核对实际内容，而非只看总体结论合理：叙述主体、否定及“有时”等限定词、金额对应消费对象、日期及时间间隔、先后顺序、触发与等待条件。若一个句子部分正确但另有不支持的事实或条件，整个单元应判unsupported/conflict。不要把别的消费对象、宽泛的近似时间或新增前置条件当作原文。
 逐条检查新增原文是否支持提案实际表达的内容及范围，目标状态和版本是否一致，是否把故事当现实、把旧摘要或旧认识当独立证据。
-首次形成认识、修订已有认识、收束已完成或暂缓的目标均可合法；没有旧认识不构成拒绝理由，不要求一定推翻旧观点。应拒绝没有实质新增的重复表达或为了反思而强造变化。
+首次形成认识、修订已有认识、收束已完成或暂缓的目标均可合法；未展示旧认识不构成拒绝理由，更不能支持“此前从未有过认识”的历史断言。reason不必罗列未知；如果把已明确的作品或假设边界称为未知，应拒绝。应拒绝没有实质新增的重复表达或为了反思而强造变化。
 逐条核对来源角色和叙述主体：role=user 的第一人称“我”属于用户，不属于 AI。用户疲惫、想独处等身体状态、感受和经历不能直接写成 AI 的状态。AI 对事情的评价和情绪可以成立，但必须由新材料支持且明确是自己的评价，不能冒领用户体验或断言用户未表达的内心。
 逐条核对是否补造过去背景，或把有限反例扩写成来源未支持的“只有”“仅”“永远”“所有”等排他条件或普遍事实。一次快速回复受肯定、一次复杂问题需慢些，不证明上次是简单问题或只有简单问题适合快速回复；出现此类无依据前提或过度推断应拒绝。
 特别检查情绪：intensity_direction与reason的方向必须一致，比较基准是目标current_intensity而非历史intensity；如果声称缓和却设成高于当前的强度，或仅因回顾恢复当年强度，应拒绝。新建new也必须有新材料和明确评价理由；无依据升温或继承用户的身体感受应拒绝。故事、假设、转述边界须在 text/reason 中保留。
@@ -94,7 +98,7 @@ class ReflectionService:
     def _cost(self, payload, phase):
         system = PROPOSAL_SYSTEM if phase == 'reflection_proposal' else REVIEW_SYSTEM
         return estimate_tokens(request_payload(self.repo.settings, system,
-            [{'role': 'user', 'content': canonical_json(payload)}], structured_tool(phase)))
+            [{'role': 'user', 'content': canonical_json(payload)}], structured_tool(phase, payload)))
 
     def _fits(self, payload):
         return max(self._cost(payload, 'reflection_proposal'),
@@ -138,20 +142,13 @@ class ReflectionService:
             if not covered:
                 retained.append(row)
         retained.sort(key=lambda row: (str(row['experience_id']), row['start'], str(row['id'])))
-        details = []
-        for detail in event.get('details', []):
-            parent = next((row for row in retained if str(row['experience_id']) == str(detail.get('experience_id'))
-                and row['role'] == detail.get('role') and row['source_revision'] == detail.get('source_revision')
-                and type(detail.get('start')) is int and type(detail.get('end')) is int
-                and row['start'] <= detail['start'] < detail['end'] <= row['end']
-                and row['quote'][detail['start']-row['start']:detail['end']-row['start']] == detail.get('quote')), None)
-            if parent:
-                details.append({'evidence_id': parent['id'], **{key: detail[key] for key in
-                    ('kind', 'meaning', 'importance', 'importance_reason', 'emotional_salience', 'emotional_reason') if key in detail}})
-        result = {key: event[key] for key in ('id', 'revision', 'title', 'gist', 'context_type',
-            'importance', 'importance_reason', 'emotional_salience', 'emotional_reason', 'recorded_at',
+        # Derived titles, summaries and scoring rationales select evidence
+        # locally; they are not premises for new self state. Do not expose them
+        # to either proposal or review. Every retained detail remains in the
+        # verified covering original quotes above.
+        result = {key: event[key] for key in ('id', 'revision', 'context_type', 'recorded_at',
             'occurred_at', 'occurred_until', 'time_precision', 'time_quote', 'source_reliability', 'source_hash') if key in event}
-        result.update(pending=bool(pending), evidence=retained, details=details,
+        result.update(pending=bool(pending), evidence=retained,
             source_experience_ids=sorted(str(value) for value in event.get('source_experience_ids', [])))
         return _json(result)
 
@@ -245,7 +242,8 @@ class ReflectionService:
             else:
                 omitted.append({'id': str(event['id']), 'reason': 'budget'})
         actual_pending = [row['id'] for row in payload['episodes']]
-        topic = lexical_terms(' '.join(row.get('title', '') + ' ' + row.get('gist', '') for row in payload['episodes']))
+        topic = lexical_terms(' '.join(row.get('title', '') + ' ' + row.get('gist', '')
+            for row in pending if str(row['id']) in actual_pending))
         targets = [self._target(row) for row in self.repo.reflection_targets()]
         targets.sort(key=lambda row: (-len(topic & lexical_terms(row['key'])), row['id']))
         for target in targets:
@@ -408,7 +406,12 @@ class ReflectionService:
                 accepted, review = set(), None
                 if proposal.updates:
                     reviewed = invoke('reflection_review', {**payload, 'proposals': proposal.model_dump(mode='json')['updates'],
-                        'review_units': reflection_review_units(proposal)},
+                        'review_units': reflection_review_units(proposal),
+                        'proposal_evidence': [{'proposal_id': update.id, 'evidence': [
+                            {**evidence, 'context_type': event['context_type']}
+                            for event in payload['episodes'] for evidence in event['evidence']
+                            if evidence['id'] in {str(eid) for eid in update.evidence_ids}]}
+                            for update in proposal.updates]},
                         self.model.review_reflection)
                     review = validate_reflection_review(reviewed['decision'], proposal)
                     accepted = {row.proposal_id for row in review.reviews if row.accept}

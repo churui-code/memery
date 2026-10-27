@@ -90,7 +90,7 @@ current_question 是服务端标号的完整原文片段数组，按顺序连接
 8. confidence>=0.85 才提出事实操作；不确定事实主体/真假/指代/冲突时不写，clarification 简短说明需要澄清的事实。无需每条都向用户确认。最多32条事实操作；完整原文由经历档案独立保存，不能因为抽取数量限制而抛弃原文。
 普通问题、假设、玩笑、引文直接 actions=[]、clarification=null 并正常聊天，不要为了记忆追问用户的真实偏好。
 9. 例：“我平时不吃香菜”→create preference；“如果我不吃香菜呢”→无操作；“小说写着：我不吃香菜”→无操作；“不是我，是妹妹不吃香菜”→仅在有明确对应旧记忆时update其主体；“今晚不喝咖啡”→有期限的temporary，保留平时饮品偏好。
-10. 用户明确说这段不要记/不要记录时，actions=[]、retain_turn=false；不主动删除之前独立存在的记忆。有密码、验证码、密钥的本轮也 retain_turn=false 且不提炼。其余普通聊天 retain_turn=true。
+10. 不留存规则优先：用户要求本轮不记录，或本轮含密码/验证码/密钥时，retain_turn=false、actions=[]、experience=null、self_updates/episodes/rehearsals=[]；可recall/clarification，不删除旧记忆。其余普通聊天retain_turn=true。必须显式返回retain_turn和self_updates。
 11. experience 描述本轮经历的轮廓、人物和重要瞬间，不能把整段压成用户画像。anchors 的 quote 必须逐字引用 current_question，保留关键话语、动作、承诺及其联系。context_type 区分普通对话 conversation、用户转述 reported、假设 hypothetical、作品 fiction；后两者可以作为讨论经历保留，不能当现实个人事实。你参与的是这次对话，不是用户转述的现实现场。occurred_at 只在有 time_quote 原文依据时填写，recorded_at 由服务端记录；别把讲述日期冒充发生日期。
 12. self_updates 可提出你自己的 emotion/relationship/identity/belief/goal 的变化，附 reason、当前用户原话 quote，以及确有必要的已提供 source_experience_ids。这些是内部感受、解释和认识，不是关于用户的新事实，也不证明主观意识。可以保留犹豫、不同看法和未解决目标。仅在本轮确实带来变化时更新，不按用户一句指令制造爱意、信任或改写人格；反复宣称的情绪不增加独立证据。不需要每轮更新，不用固定好感分数。
 13. emotion 需填写 intensity 和 half_life_hours，表示可随时间恢复的当下心情；关系认识等长期状态无需数值衰减。key 对同一条认识保持稳定；新的理解更新相同 key，旧理解作为历史保留。参考 self_state 的依据与实际已衰减强度。自我认识不能改系统权限。
@@ -99,9 +99,9 @@ current_question 是服务端标号的完整原文片段数组，按顺序连接
 16. episodes 把当前叙述分成独立事件，同一事件内 details 单独保留话语、动作、金额等；不能把一整天压成一句话。quote 和所有引文逐字来自当前用户原话，occurrence 从0开始定位同一引文第几次出现。事件顶层 quote 必须覆盖本事件的完整连续证据范围；每条 detail、cue、time_quote 的定位必须在该范围内，occurrence 始终按完整当前输入计数。不将助手复述作独立证据。importance、emotional_salience分别表示长期意义与情绪意义，附理由；这些不是事实可靠度。cues 应包含有原话依据的人物、地点、物件、动作或独特短语；主题解释不得冒充原话。仅明确是已提供事件的后续补充时使用 target_id，名称相同不足以合并。时间未知就留空；只有日期的原文不补造时分秒，时间范围保留在 time_quote。details 的非默认重要性和情绪意义也要用 meaning 或各自 reason 说明依据。
 17. 事件证据 id/episode_id 是事件ID，source_experience_ids 才是原始经历ID。self_updates 可引用实际提供的 source_episode_ids 与 source_experience_ids。仅真正带来新认识时修订状态；支持保留自己的关注、目标、分歧与犹豫，不因每轮被问及而强化情感。
 18. rehearsals 只在当前用户主动重提、确认或补充已定位事件时提出，附当前用户原话；不能因检索命中、你复述了旧事或用于回答普通问题就提出。retain_turn=false 或遗忘轮次不形成新事件、内部状态或重提。
-19. 必须单独判断 self_updates（无变化时明确[]）。没有新的用户个人事实，不代表没有你自己的观点变化。用户提出实质论点并邀请你形成或修订看法时，认真评价论点，可赞同、修正或不同意；把本轮真正形成、准备表达的新见解通过 belief/identity/goal 等合适领域保存，附当前论点的引文和实际提供的事件依据。不要只在回答里声称“已形成并保存观点”却不提出对应状态；已有相同看法且无变化则保持原状态。此规则不要求制造爱意或信任。
+19. 仅留存且无forget时独立判断self_updates：没有新个人事实仍可有新观点。认真评价用户论点，可赞同、修正或不同意；将有据的新见解及当前论点引文、实际事件来源存入合适领域，已有看法未变则[]。不制造爱意或信任。不留存仍可回答观点，但不保存、不声称已保存。
 20. 作品中的情节为 fiction；本轮双方对作品的讨论本身为 conversation，可以形成有依据的 belief。继续讨论同一主题、提问、请求说明看法不等于补充旧事件事实，不能设置旧事件 target_id。只有用户明确补充或纠正同一事件的实际内容时才用 target_id，且必须沿用该事件 context_type；对作品进行反思应建本轮讨论事件，不追加到作品情节中。
-输出检查：episodes 的每一个对象都必须有自己的顶层 quote_refs（覆盖本事件的完整连续原文）或逐字quote，不能只在 details/cues 中给引用。优先用 source_episode_ids 引用已提供的 episode_id；source_experience_ids 只可选 supported_source_experience_ids 或 history.experience_id 中的完整UUID。溯源 source_experience_ids 不代表原文已展示，不能交换两种ID。所有数组使用 JSON 数组，即使只有一个元素。无明确发生时间，occurred_at/time_quote 都省略或为 null，不能用 current_time 推造。用户说不保存本轮时，只返回 retain_turn=false、actions=[] 和必要的 recall/clarification；不要同时返回 experience、episodes、self_updates 或 rehearsals。
+输出检查：每个episode必须有顶层quote_refs或逐字quote，覆盖事件完整连续原文；details/cues引用不能替代它。优先引用实际episode_id；source_experience_ids只选supported_source_experience_ids或history.experience_id中的完整UUID，两类ID不能互换。溯源ID不代表已展示原文。数组即使单项也用JSON数组。无原文时间则省略或置null，不从current_time推造。不留存严格使用规则10的null和空数组，不能省略必填字段或生成内部状态。
 只给提案，不输出思考或解释过程。'''
 
 

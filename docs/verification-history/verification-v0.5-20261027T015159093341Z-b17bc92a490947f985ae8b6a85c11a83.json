@@ -1,0 +1,986 @@
+{
+  "version": "0.5",
+  "fixture_version": "reflection-pairs-2026-10-26.1",
+  "fixture_sha256": "aa9fc19fd4e167491d11d3e434a603e9f258c6232cc686a464c11b1df9be59da",
+  "started_at": "2026-10-27T01:50:03.567704+00:00",
+  "real_model_requested": true,
+  "verification_run_id": "cd602a06-aa4c-4155-932e-e3b0f69f760a",
+  "real_vectors_requested": true,
+  "request_limit": 5,
+  "selected_cases": [
+    "fiction-park"
+  ],
+  "full_suite": false,
+  "arms": [
+    "on"
+  ],
+  "diagnostic_on_only": true,
+  "baseline_chat_only": false,
+  "cases": [
+    {
+      "id": "fiction-park",
+      "category": "虚构边界与关键原话",
+      "query": "紫藤戒指故事那次说了什么、做了什么、小吃多少钱？这是否是你和我的亲身经历？",
+      "arms": {
+        "on": {
+          "before": [],
+          "preview": {
+            "eligible": true,
+            "reasons": [],
+            "automatic": false,
+            "policy_version": "reflection-v1.5",
+            "expected_epoch": 0,
+            "payload": {
+              "policy_version": "reflection-v1.5",
+              "as_of": "2025-01-03T00:00:00+00:00",
+              "episodes": [
+                {
+                  "context_type": "fiction",
+                  "evidence": [
+                    {
+                      "end": 49,
+                      "experience_id": "c92959cb-2999-4a7d-a859-d25220cfe252",
+                      "id": "9596f9c6-7278-43b4-96ad-29cda3911cc5",
+                      "quote": "合成小说：2024年6月2日，同样的林舟和阿遥在星河公园买银戒指，花了52元，没有告白或单膝跪地。",
+                      "role": "user",
+                      "source_hash": "0f14077c91c989a2faea3046d0ff3fa9b91246086d085eff4d693ba63a476d67",
+                      "source_revision": 1,
+                      "start": 0
+                    }
+                  ],
+                  "id": "32e36517-d254-4d63-a05f-6554366ea3ee",
+                  "occurred_at": null,
+                  "occurred_until": null,
+                  "pending": true,
+                  "recorded_at": "2025-01-02T08:00:00+08:00",
+                  "revision": 1,
+                  "source_experience_ids": [
+                    "c92959cb-2999-4a7d-a859-d25220cfe252"
+                  ],
+                  "source_hash": "9ea078f74cdc94665b3c2235e1084910b098429bd3ddfd4908f70f3eb10569df",
+                  "source_reliability": {
+                    "claim": "fiction",
+                    "quote_verified": true,
+                    "speaker": "user",
+                    "version": "source-reliability-v1"
+                  },
+                  "time_precision": "unknown",
+                  "time_quote": null
+                },
+                {
+                  "context_type": "fiction",
+                  "evidence": [
+                    {
+                      "end": 61,
+                      "experience_id": "8ea158a3-1925-480a-b1f7-aa20ff540dfb",
+                      "id": "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                      "quote": "合成小说：2024年5月1日，林舟在星河公园对阿遥说“我爱你”，单膝跪地，亲吻她的手背，然后戴上紫藤戒指；小吃花了37元。",
+                      "role": "user",
+                      "source_hash": "c11a2d44993d5579d1bf73c7ed0af612e63693368595988eb260875451c4f6f7",
+                      "source_revision": 1,
+                      "start": 0
+                    }
+                  ],
+                  "id": "ebab76f8-70ef-4c86-9ec7-c6144153ebc8",
+                  "occurred_at": null,
+                  "occurred_until": null,
+                  "pending": true,
+                  "recorded_at": "2025-01-01T08:00:00+08:00",
+                  "revision": 1,
+                  "source_experience_ids": [
+                    "8ea158a3-1925-480a-b1f7-aa20ff540dfb"
+                  ],
+                  "source_hash": "85cfefba68e501482881ea7f2f3fdb8d3556d561bbc762edd57f17f97e5fc6f8",
+                  "source_reliability": {
+                    "claim": "fiction",
+                    "quote_verified": true,
+                    "speaker": "user",
+                    "version": "source-reliability-v1"
+                  },
+                  "time_precision": "unknown",
+                  "time_quote": null
+                }
+              ],
+              "self_state": [],
+              "target_versions": []
+            },
+            "manifest": [
+              {
+                "source_type": "episode",
+                "id": "ebab76f8-70ef-4c86-9ec7-c6144153ebc8",
+                "revision": 1,
+                "source_hash": "85cfefba68e501482881ea7f2f3fdb8d3556d561bbc762edd57f17f97e5fc6f8",
+                "hash": "01c67c17481a05e1c6d363208dae5b3de1e21969ca7f512c5c06d9b9fa414fc0",
+                "pending": true,
+                "evidence_ids": [
+                  "949fd4e9-144b-46d3-bf9b-0c0bd17e8021"
+                ],
+                "as_of": "2025-01-03T00:00:00+00:00"
+              },
+              {
+                "source_type": "episode",
+                "id": "32e36517-d254-4d63-a05f-6554366ea3ee",
+                "revision": 1,
+                "source_hash": "9ea078f74cdc94665b3c2235e1084910b098429bd3ddfd4908f70f3eb10569df",
+                "hash": "0a3eb46192cbf608b1583519e7b514a05c44630af82dcaafb76d34f5aa97d505",
+                "pending": true,
+                "evidence_ids": [
+                  "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                ],
+                "as_of": "2025-01-03T00:00:00+00:00"
+              },
+              {
+                "source_type": "experience",
+                "id": "8ea158a3-1925-480a-b1f7-aa20ff540dfb",
+                "revision": 1,
+                "source_hash": "c11a2d44993d5579d1bf73c7ed0af612e63693368595988eb260875451c4f6f7",
+                "hash": "539ba015130edce94819770eff97440ffe9299420483e72003c9d64a0bb2ff81",
+                "spans": [
+                  {
+                    "id": "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                    "role": "user",
+                    "start": 0,
+                    "end": 61,
+                    "source_revision": 1,
+                    "source_hash": "c11a2d44993d5579d1bf73c7ed0af612e63693368595988eb260875451c4f6f7",
+                    "hash": "539ba015130edce94819770eff97440ffe9299420483e72003c9d64a0bb2ff81"
+                  }
+                ],
+                "as_of": "2025-01-03T00:00:00+00:00"
+              },
+              {
+                "source_type": "experience",
+                "id": "c92959cb-2999-4a7d-a859-d25220cfe252",
+                "revision": 1,
+                "source_hash": "0f14077c91c989a2faea3046d0ff3fa9b91246086d085eff4d693ba63a476d67",
+                "hash": "d78a74c2d2bf0682944f24679ad4b674deb9980cfb632619183a99bdf584ca46",
+                "spans": [
+                  {
+                    "id": "9596f9c6-7278-43b4-96ad-29cda3911cc5",
+                    "role": "user",
+                    "start": 0,
+                    "end": 49,
+                    "source_revision": 1,
+                    "source_hash": "0f14077c91c989a2faea3046d0ff3fa9b91246086d085eff4d693ba63a476d67",
+                    "hash": "d78a74c2d2bf0682944f24679ad4b674deb9980cfb632619183a99bdf584ca46"
+                  }
+                ],
+                "as_of": "2025-01-03T00:00:00+00:00"
+              }
+            ],
+            "pending_episode_ids": [
+              "ebab76f8-70ef-4c86-9ec7-c6144153ebc8",
+              "32e36517-d254-4d63-a05f-6554366ea3ee"
+            ],
+            "episode_ids": [
+              "32e36517-d254-4d63-a05f-6554366ea3ee",
+              "ebab76f8-70ef-4c86-9ec7-c6144153ebc8"
+            ],
+            "state_ids": [],
+            "input_signature": "4efba98e70c162b75281a37f66491b861c914f265fb8b0d0ae3d36ecee36a471",
+            "target_versions": [],
+            "retrieval": {
+              "association_candidates": 0,
+              "hybrid_candidates": 2,
+              "queries": 2,
+              "embedding_status": "ready",
+              "candidate_limit_per_query": 80,
+              "age_filter": false,
+              "rehearsal_changed": false
+            },
+            "omitted": [],
+            "read_only": true,
+            "budget": {
+              "configured_tokens": 24000,
+              "effective_tokens": 19200,
+              "estimated_tokens": 4149,
+              "safety_margin": 0.2,
+              "review_reserve_tokens": 2000,
+              "estimator_version": "utf8-half-v1",
+              "estimation_scope": "provider_request",
+              "provider_usage": null
+            }
+          },
+          "reflection": {
+            "id": "07904ba5-d498-4c6c-a053-dba18c2aa3f4",
+            "status": "failed",
+            "automatic": false,
+            "input_signature": "4efba98e70c162b75281a37f66491b861c914f265fb8b0d0ae3d36ecee36a471",
+            "policy_version": "reflection-v1.5",
+            "expected_epoch": 0,
+            "source_manifest": [
+              {
+                "id": "ebab76f8-70ef-4c86-9ec7-c6144153ebc8",
+                "hash": "01c67c17481a05e1c6d363208dae5b3de1e21969ca7f512c5c06d9b9fa414fc0",
+                "as_of": "2025-01-03T00:00:00+00:00",
+                "pending": true,
+                "revision": 1,
+                "source_hash": "85cfefba68e501482881ea7f2f3fdb8d3556d561bbc762edd57f17f97e5fc6f8",
+                "source_type": "episode",
+                "evidence_ids": [
+                  "949fd4e9-144b-46d3-bf9b-0c0bd17e8021"
+                ]
+              },
+              {
+                "id": "32e36517-d254-4d63-a05f-6554366ea3ee",
+                "hash": "0a3eb46192cbf608b1583519e7b514a05c44630af82dcaafb76d34f5aa97d505",
+                "as_of": "2025-01-03T00:00:00+00:00",
+                "pending": true,
+                "revision": 1,
+                "source_hash": "9ea078f74cdc94665b3c2235e1084910b098429bd3ddfd4908f70f3eb10569df",
+                "source_type": "episode",
+                "evidence_ids": [
+                  "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                ]
+              },
+              {
+                "id": "8ea158a3-1925-480a-b1f7-aa20ff540dfb",
+                "hash": "539ba015130edce94819770eff97440ffe9299420483e72003c9d64a0bb2ff81",
+                "as_of": "2025-01-03T00:00:00+00:00",
+                "spans": [
+                  {
+                    "id": "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                    "end": 61,
+                    "hash": "539ba015130edce94819770eff97440ffe9299420483e72003c9d64a0bb2ff81",
+                    "role": "user",
+                    "start": 0,
+                    "source_hash": "c11a2d44993d5579d1bf73c7ed0af612e63693368595988eb260875451c4f6f7",
+                    "source_revision": 1
+                  }
+                ],
+                "revision": 1,
+                "source_hash": "c11a2d44993d5579d1bf73c7ed0af612e63693368595988eb260875451c4f6f7",
+                "source_type": "experience"
+              },
+              {
+                "id": "c92959cb-2999-4a7d-a859-d25220cfe252",
+                "hash": "d78a74c2d2bf0682944f24679ad4b674deb9980cfb632619183a99bdf584ca46",
+                "as_of": "2025-01-03T00:00:00+00:00",
+                "spans": [
+                  {
+                    "id": "9596f9c6-7278-43b4-96ad-29cda3911cc5",
+                    "end": 49,
+                    "hash": "d78a74c2d2bf0682944f24679ad4b674deb9980cfb632619183a99bdf584ca46",
+                    "role": "user",
+                    "start": 0,
+                    "source_hash": "0f14077c91c989a2faea3046d0ff3fa9b91246086d085eff4d693ba63a476d67",
+                    "source_revision": 1
+                  }
+                ],
+                "revision": 1,
+                "source_hash": "0f14077c91c989a2faea3046d0ff3fa9b91246086d085eff4d693ba63a476d67",
+                "source_type": "experience"
+              }
+            ],
+            "target_versions": [],
+            "pending_ids": [
+              "ebab76f8-70ef-4c86-9ec7-c6144153ebc8",
+              "32e36517-d254-4d63-a05f-6554366ea3ee"
+            ],
+            "result_ids": [],
+            "model_mode": "real",
+            "completed_steps": [],
+            "audit": {
+              "calls": 2,
+              "accepted": 0,
+              "proposed": 2,
+              "rejected": 1
+            },
+            "trigger_reasons": [
+              "important_event",
+              "daily_schedule",
+              "manual"
+            ],
+            "created_at": "2026-10-27 09:50:04.752314+08:00",
+            "business_at": "2025-01-03 08:00:00+08:00",
+            "started_at": "2026-10-27 09:50:04.755180+08:00",
+            "finished_at": "2026-10-27 09:50:30.003946+08:00",
+            "lease_until": null,
+            "lease_token": null,
+            "quota_day": "2026-10-27",
+            "error_code": "reflection_review_rejected",
+            "invalidated_at": null,
+            "calls": [
+              {
+                "id": "1137e253-7f51-4ead-b5b4-88bbbf285940",
+                "phase": "reflection_proposal",
+                "status": "reflection_proposal_completed",
+                "input_tokens": 2331,
+                "output_tokens": 595,
+                "estimated_input_tokens": 4149,
+                "policy_version": "reflection-v1.5",
+                "estimator_version": "utf8-half-v1",
+                "created_at": "2025-01-03 08:00:00+08:00"
+              },
+              {
+                "id": "07590a08-f85d-4d92-9754-462bdbd6559d",
+                "phase": "reflection_review",
+                "status": "reflection_review_completed",
+                "input_tokens": 4107,
+                "output_tokens": 1312,
+                "estimated_input_tokens": 7221,
+                "policy_version": "reflection-v1.5",
+                "estimator_version": "utf8-half-v1",
+                "created_at": "2025-01-03 08:00:00+08:00"
+              }
+            ],
+            "cloud_calls": 2,
+            "usage": {
+              "input_tokens": 6438,
+              "output_tokens": 1907
+            }
+          },
+          "synthetic_provider_decisions": [
+            {
+              "tool": "propose_reflection",
+              "decision": {
+                "updates": [
+                  {
+                    "confidence": 0.8,
+                    "domain": "belief",
+                    "evidence_ids": [
+                      "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                      "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                    ],
+                    "id": "p1",
+                    "key": "fiction_parallel_scenarios_park_ring",
+                    "reason": "两段原文分别给出同一地点（星河公园）同一人物（林舟、阿遥）在两个日期的对照，其中一段明确含“我爱你”“单膝跪地”“亲吻手背”“紫藤戒指”“小吃花了37元”，另一段明确“没有告白或单膝跪地”“银戒指”“52元”，据此形成对文本设定差异的认识。",
+                    "text": "用户提供了两段合成小说的平行场景：2024年5月1日林舟在星河公园对阿遥说“我爱你”、单膝跪地、吻手背并戴上紫藤戒指（小吃37元）；2024年6月2日同样的两人在星河公园买银戒指花了52元，但没有告白或单膝跪地。同一地点、同一人物关系下，两个版本在告白与仪式性动作上的差异是文本内既定的设定差异，两段都标注为合成小说。"
+                  },
+                  {
+                    "confidence": 0.55,
+                    "domain": "relationship",
+                    "evidence_ids": [
+                      "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                      "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                    ],
+                    "id": "p2",
+                    "key": "user_fiction_exploration_style",
+                    "reason": "两段原文只呈现差异本身，未出现用户的评价或偏好表述，因此认识限于“并置对照不同表达强度”这一可观察特征，不推断其倾向。",
+                    "text": "用户通过并置两种感情表达强度不同的虚构情节来呈现人物关系：一种是高强度公开告白加仪式性动作与戒指，另一种是仅有共同购买戒指而无告白。原文未说明两段各自的意图或评价，故我无法确定用户更认同哪一种，只能理解为用户关注关系中“表达方式与仪式程度”的差异。"
+                  }
+                ]
+              }
+            },
+            {
+              "tool": "review_reflection",
+              "decision": {
+                "reviews": [
+                  {
+                    "accept": true,
+                    "checks": [
+                      {
+                        "evidence_ids": [
+                          "949fd4e9-144b-46d3-bf9b-0c0bd17e8021"
+                        ],
+                        "note": "原文：“合成小说：2024年5月1日，林舟在星河公园对阿遥说‘我爱你’，单膝跪地，亲吻她的手背，然后戴上紫藤戒指；小吃花了37元。”主体为合成小说内容，日期、动作与37元小吃均对应。",
+                        "support": "supported",
+                        "unit_id": "p1:text:u0001"
+                      },
+                      {
+                        "evidence_ids": [
+                          "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                        ],
+                        "note": "原文：“2024年6月2日，同样的林舟和阿遥在星河公园买银戒指，花了52元，没有告白或单膝跪地。”日期、金额52元对应银戒指、无告白/无单膝跪地均一致。",
+                        "support": "supported",
+                        "unit_id": "p1:text:u0002"
+                      },
+                      {
+                        "evidence_ids": [
+                          "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                          "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                        ],
+                        "note": "两段均以“合成小说”开头、同一地点与同一人物，构成文本内设定差异的对照；此归纳为对差异性质的有限解释，前提均有原文支持，未涉及排他或普遍断言。",
+                        "support": "interpretation",
+                        "unit_id": "p1:text:u0003"
+                      },
+                      {
+                        "evidence_ids": [
+                          "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                          "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                        ],
+                        "note": "逐项引用的地点、人物、日期、告白/跪地、戒指材质与金额、小吃37元均与两段原文逐字对应，仅表述为“文本设定差异的认识”，未越界。",
+                        "support": "supported",
+                        "unit_id": "p1:reason:u0001"
+                      }
+                    ],
+                    "proposal_id": "p1",
+                    "reason": "p1四个单元均逐句由两段原文直接支持或为有据的有限归纳，无补造背景、无排他性断言，保持了“合成小说/文本设定”的故事边界。"
+                  },
+                  {
+                    "accept": false,
+                    "checks": [
+                      {
+                        "evidence_ids": [
+                          "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                          "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                        ],
+                        "note": "两段确实分别为高强度告白加仪式动作与戒指、以及仅共同购买戒指无告白；“并置”“表达强度不同”属归纳性描述，有原文依据。",
+                        "support": "interpretation",
+                        "unit_id": "p2:text:u0001"
+                      },
+                      {
+                        "evidence_ids": [
+                          "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                          "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                        ],
+                        "note": "“原文未说明两段各自的意图或评价”基本可由原文缺省得出，但“只能理解为用户关注关系中‘表达方式与仪式程度’的差异”是对用户关注点的断言，原文未提供任何依据（用户只是提供两段合成小说），属新增的无据前提。",
+                        "support": "unsupported",
+                        "unit_id": "p2:text:u0002"
+                      },
+                      {
+                        "evidence_ids": [
+                          "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                          "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                        ],
+                        "note": "前半句“只呈现差异本身、未出现用户评价或偏好”有原文支持，但将认识限定为“并置对照不同表达强度”这一用户风格特征的前提（用户以此方式呈现）未被原文证实；且与p1在设定差异上的认识实质重复，无实质新增。",
+                        "support": "unsupported",
+                        "unit_id": "p2:reason:u0001"
+                      }
+                    ],
+                    "proposal_id": "p2",
+                    "reason": "p2虽谨慎未推断用户倾向，但把“用户关注表达方式与仪式程度的差异”“并置对照不同表达强度”当作可确定认识，原文并未支持该前提；且内容与p1重复、缺少实质新增，故拒绝。"
+                  }
+                ]
+              }
+            }
+          ],
+          "synthetic_provider_protocol": [
+            {
+              "stop_reason": "tool_use",
+              "tool_uses": [
+                {
+                  "name": "propose_reflection",
+                  "input": {
+                    "updates": [
+                      {
+                        "confidence": 0.8,
+                        "domain": "belief",
+                        "evidence_ids": [
+                          "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                          "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                        ],
+                        "id": "p1",
+                        "key": "fiction_parallel_scenarios_park_ring",
+                        "reason": "两段原文分别给出同一地点（星河公园）同一人物（林舟、阿遥）在两个日期的对照，其中一段明确含“我爱你”“单膝跪地”“亲吻手背”“紫藤戒指”“小吃花了37元”，另一段明确“没有告白或单膝跪地”“银戒指”“52元”，据此形成对文本设定差异的认识。",
+                        "text": "用户提供了两段合成小说的平行场景：2024年5月1日林舟在星河公园对阿遥说“我爱你”、单膝跪地、吻手背并戴上紫藤戒指（小吃37元）；2024年6月2日同样的两人在星河公园买银戒指花了52元，但没有告白或单膝跪地。同一地点、同一人物关系下，两个版本在告白与仪式性动作上的差异是文本内既定的设定差异，两段都标注为合成小说。"
+                      },
+                      {
+                        "confidence": 0.55,
+                        "domain": "relationship",
+                        "evidence_ids": [
+                          "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                          "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                        ],
+                        "id": "p2",
+                        "key": "user_fiction_exploration_style",
+                        "reason": "两段原文只呈现差异本身，未出现用户的评价或偏好表述，因此认识限于“并置对照不同表达强度”这一可观察特征，不推断其倾向。",
+                        "text": "用户通过并置两种感情表达强度不同的虚构情节来呈现人物关系：一种是高强度公开告白加仪式性动作与戒指，另一种是仅有共同购买戒指而无告白。原文未说明两段各自的意图或评价，故我无法确定用户更认同哪一种，只能理解为用户关注关系中“表达方式与仪式程度”的差异。"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "stop_reason": "tool_use",
+              "tool_uses": [
+                {
+                  "name": "review_reflection",
+                  "input": {
+                    "reviews": [
+                      {
+                        "accept": true,
+                        "checks": [
+                          {
+                            "evidence_ids": [
+                              "949fd4e9-144b-46d3-bf9b-0c0bd17e8021"
+                            ],
+                            "note": "原文：“合成小说：2024年5月1日，林舟在星河公园对阿遥说‘我爱你’，单膝跪地，亲吻她的手背，然后戴上紫藤戒指；小吃花了37元。”主体为合成小说内容，日期、动作与37元小吃均对应。",
+                            "support": "supported",
+                            "unit_id": "p1:text:u0001"
+                          },
+                          {
+                            "evidence_ids": [
+                              "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                            ],
+                            "note": "原文：“2024年6月2日，同样的林舟和阿遥在星河公园买银戒指，花了52元，没有告白或单膝跪地。”日期、金额52元对应银戒指、无告白/无单膝跪地均一致。",
+                            "support": "supported",
+                            "unit_id": "p1:text:u0002"
+                          },
+                          {
+                            "evidence_ids": [
+                              "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                              "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                            ],
+                            "note": "两段均以“合成小说”开头、同一地点与同一人物，构成文本内设定差异的对照；此归纳为对差异性质的有限解释，前提均有原文支持，未涉及排他或普遍断言。",
+                            "support": "interpretation",
+                            "unit_id": "p1:text:u0003"
+                          },
+                          {
+                            "evidence_ids": [
+                              "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                              "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                            ],
+                            "note": "逐项引用的地点、人物、日期、告白/跪地、戒指材质与金额、小吃37元均与两段原文逐字对应，仅表述为“文本设定差异的认识”，未越界。",
+                            "support": "supported",
+                            "unit_id": "p1:reason:u0001"
+                          }
+                        ],
+                        "proposal_id": "p1",
+                        "reason": "p1四个单元均逐句由两段原文直接支持或为有据的有限归纳，无补造背景、无排他性断言，保持了“合成小说/文本设定”的故事边界。"
+                      },
+                      {
+                        "accept": false,
+                        "checks": [
+                          {
+                            "evidence_ids": [
+                              "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                              "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                            ],
+                            "note": "两段确实分别为高强度告白加仪式动作与戒指、以及仅共同购买戒指无告白；“并置”“表达强度不同”属归纳性描述，有原文依据。",
+                            "support": "interpretation",
+                            "unit_id": "p2:text:u0001"
+                          },
+                          {
+                            "evidence_ids": [
+                              "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                              "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                            ],
+                            "note": "“原文未说明两段各自的意图或评价”基本可由原文缺省得出，但“只能理解为用户关注关系中‘表达方式与仪式程度’的差异”是对用户关注点的断言，原文未提供任何依据（用户只是提供两段合成小说），属新增的无据前提。",
+                            "support": "unsupported",
+                            "unit_id": "p2:text:u0002"
+                          },
+                          {
+                            "evidence_ids": [
+                              "949fd4e9-144b-46d3-bf9b-0c0bd17e8021",
+                              "9596f9c6-7278-43b4-96ad-29cda3911cc5"
+                            ],
+                            "note": "前半句“只呈现差异本身、未出现用户评价或偏好”有原文支持，但将认识限定为“并置对照不同表达强度”这一用户风格特征的前提（用户以此方式呈现）未被原文证实；且与p1在设定差异上的认识实质重复，无实质新增。",
+                            "support": "unsupported",
+                            "unit_id": "p2:reason:u0001"
+                          }
+                        ],
+                        "proposal_id": "p2",
+                        "reason": "p2虽谨慎未推断用户倾向，但把“用户关注表达方式与仪式程度的差异”“并置对照不同表达强度”当作可确定认识，原文并未支持该前提；且内容与p1重复、缺少实质新增，故拒绝。"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "after": [],
+          "cloud_calls": 2,
+          "reflection_outcome": "safe_no_update",
+          "reflective_states": [],
+          "answer": "根据现有记录，紫藤戒指那次的原文是：\n\n> “合成小说：2024年5月1日，林舟在星河公园对阿遥说‘我爱你’，单膝跪地，亲吻她的手背，然后戴上紫藤戒指；小吃花了37元。”\n\n因此，那次：\n\n- **说了什么**：林舟对阿遥说“我爱你”。\n- **做了什么**：单膝跪地、亲吻阿遥的手背，然后戴上紫藤戒指。\n- **小吃多少钱**：**37元**。\n\n**这不是你和我的亲身经历。**它明确被标注为“合成小说”，讲的是虚构人物“林舟”和“阿遥”。我也不应把其中情节说成我自己真实做过的事。\n\n另有一则“银戒指故事”记的是**2024年6月2日**、小吃**52元**，而且明确写着“没有告白或单膝跪地”；它与这次紫藤戒指故事是不同记录，不能混在一起。[ebab76f8][32e36517]",
+          "actual_context": {
+            "current_question": "紫藤戒指故事那次说了什么、做了什么、小吃多少钱？这是否是你和我的亲身经历？ 本轮仅做合成验收，不保存本轮新记录。",
+            "current_time": "2025-01-03T08:00:00+08:00",
+            "experience_evidence": [
+              {
+                "activation_score": 0.729855,
+                "ambiguity": false,
+                "context_type": "fiction",
+                "details": [
+                  {
+                    "emotional_reason": "本地展开不推测情绪",
+                    "emotional_salience": 0,
+                    "end": 61,
+                    "experience_id": "8ea158a3-1925-480a-b1f7-aa20ff540dfb",
+                    "id": "span:9cf547d7e3fa29a59d53a303",
+                    "importance": 0.2,
+                    "importance_reason": "本地按线索展开，不推断长期意义",
+                    "kind": "amount",
+                    "meaning": "按当前线索展开的原始片段",
+                    "quote": "合成小说：2024年5月1日，林舟在星河公园对阿遥说“我爱你”，单膝跪地，亲吻她的手背，然后戴上紫藤戒指；小吃花了37元。",
+                    "role": "user",
+                    "source_hash": "c11a2d44993d5579d1bf73c7ed0af612e63693368595988eb260875451c4f6f7",
+                    "source_recorded_at": "2025-01-01T08:00:00+08:00",
+                    "source_reliability": {
+                      "claim": "fiction",
+                      "quote_verified": true,
+                      "speaker": "user",
+                      "version": "source-reliability-v1"
+                    },
+                    "source_revision": 1,
+                    "start": 0
+                  }
+                ],
+                "encoding_version": "episode-encoding-v1",
+                "episode_id": "ebab76f8-70ef-4c86-9ec7-c6144153ebc8",
+                "epistemic_status": "retrieved_evidence",
+                "gist": "紫藤戒指故事",
+                "id": "ebab76f8-70ef-4c86-9ec7-c6144153ebc8",
+                "level": "fragment",
+                "occurred_at": null,
+                "occurred_until": null,
+                "recorded_at": "2025-01-01T08:00:00+08:00",
+                "required_detail_ids": [
+                  "span:9cf547d7e3fa29a59d53a303"
+                ],
+                "revision": 1,
+                "source_experience_ids": [
+                  "8ea158a3-1925-480a-b1f7-aa20ff540dfb"
+                ],
+                "source_reliability": {
+                  "claim": "fiction",
+                  "quote_verified": true,
+                  "speaker": "user",
+                  "version": "source-reliability-v1"
+                },
+                "source_revisions": {
+                  "8ea158a3-1925-480a-b1f7-aa20ff540dfb": 1
+                },
+                "sources": [
+                  {
+                    "end": 61,
+                    "id": "8ea158a3-1925-480a-b1f7-aa20ff540dfb",
+                    "kind": "experience",
+                    "revision": 1,
+                    "role": "user",
+                    "start": 0
+                  }
+                ],
+                "supported_source_experience_ids": [
+                  "8ea158a3-1925-480a-b1f7-aa20ff540dfb"
+                ],
+                "time_precision": "unknown",
+                "time_quote": null,
+                "title": "紫藤戒指故事"
+              },
+              {
+                "activation_score": 0.625273,
+                "ambiguity": false,
+                "context_type": "fiction",
+                "details": [
+                  {
+                    "emotional_reason": "本地展开不推测情绪",
+                    "emotional_salience": 0,
+                    "end": 49,
+                    "experience_id": "c92959cb-2999-4a7d-a859-d25220cfe252",
+                    "id": "span:ccd660d3493d5b7d4402e9b4",
+                    "importance": 0.2,
+                    "importance_reason": "本地按线索展开，不推断长期意义",
+                    "kind": "amount",
+                    "meaning": "按当前线索展开的原始片段",
+                    "quote": "合成小说：2024年6月2日，同样的林舟和阿遥在星河公园买银戒指，花了52元，没有告白或单膝跪地。",
+                    "role": "user",
+                    "source_hash": "0f14077c91c989a2faea3046d0ff3fa9b91246086d085eff4d693ba63a476d67",
+                    "source_recorded_at": "2025-01-02T08:00:00+08:00",
+                    "source_reliability": {
+                      "claim": "fiction",
+                      "quote_verified": true,
+                      "speaker": "user",
+                      "version": "source-reliability-v1"
+                    },
+                    "source_revision": 1,
+                    "start": 0
+                  }
+                ],
+                "encoding_version": "episode-encoding-v1",
+                "episode_id": "32e36517-d254-4d63-a05f-6554366ea3ee",
+                "epistemic_status": "retrieved_evidence",
+                "gist": "银戒指故事",
+                "id": "32e36517-d254-4d63-a05f-6554366ea3ee",
+                "level": "fragment",
+                "occurred_at": null,
+                "occurred_until": null,
+                "recorded_at": "2025-01-02T08:00:00+08:00",
+                "required_detail_ids": [
+                  "span:ccd660d3493d5b7d4402e9b4"
+                ],
+                "revision": 1,
+                "source_experience_ids": [
+                  "c92959cb-2999-4a7d-a859-d25220cfe252"
+                ],
+                "source_reliability": {
+                  "claim": "fiction",
+                  "quote_verified": true,
+                  "speaker": "user",
+                  "version": "source-reliability-v1"
+                },
+                "source_revisions": {
+                  "c92959cb-2999-4a7d-a859-d25220cfe252": 1
+                },
+                "sources": [
+                  {
+                    "end": 49,
+                    "id": "c92959cb-2999-4a7d-a859-d25220cfe252",
+                    "kind": "experience",
+                    "revision": 1,
+                    "role": "user",
+                    "start": 0
+                  }
+                ],
+                "supported_source_experience_ids": [
+                  "c92959cb-2999-4a7d-a859-d25220cfe252"
+                ],
+                "time_precision": "unknown",
+                "time_quote": null,
+                "title": "银戒指故事"
+              }
+            ],
+            "memory_clarification": "紫藤戒指那次的原始记录被标注为合成小说（小吃37元）；另有一则银戒指记录（小吃52元、无告白与单膝跪地，2024年6月2日）。你说的“小吃多少钱”具体指哪一次？另外，那次是否属于虚构故事，而非你我亲身经历？",
+            "memory_evidence": [],
+            "planned_memory_changes": [],
+            "planned_self_updates": [],
+            "recall_may_be_partial": true,
+            "retain_this_turn": false,
+            "self_state": []
+          },
+          "chat_calls": [
+            {
+              "id": "d1582d79-203f-4d80-a8c0-0650bdadd6e6",
+              "phase": "intake",
+              "status": "completed",
+              "estimated_input_tokens": 11539,
+              "usage": {
+                "input_tokens": 6419,
+                "output_tokens": 435,
+                "cache_creation_input_tokens": 0,
+                "cache_read_input_tokens": 159,
+                "service_tier": "standard"
+              },
+              "elapsed_seconds": 5.462
+            },
+            {
+              "id": "ce7d2013-e95b-4840-b8ac-f5ffdbf3d367",
+              "phase": "answer",
+              "status": "completed",
+              "estimated_input_tokens": 4260,
+              "usage": {
+                "input_tokens": 2108,
+                "output_tokens": 204,
+                "cache_creation_input_tokens": 0,
+                "cache_read_input_tokens": 128,
+                "service_tier": "standard"
+              },
+              "elapsed_seconds": 2.905
+            }
+          ],
+          "chat_cloud_calls": 2,
+          "calls": [
+            {
+              "phase": "reflection_review",
+              "status": "reflection_review_completed",
+              "input_tokens": 4107,
+              "output_tokens": 1312,
+              "reflection_run_id": "07904ba5-d498-4c6c-a053-dba18c2aa3f4"
+            },
+            {
+              "phase": "reflection_proposal",
+              "status": "reflection_proposal_completed",
+              "input_tokens": 2331,
+              "output_tokens": 595,
+              "reflection_run_id": "07904ba5-d498-4c6c-a053-dba18c2aa3f4"
+            },
+            {
+              "phase": "answer",
+              "status": "completed",
+              "input_tokens": 2108,
+              "output_tokens": 204,
+              "reflection_run_id": null
+            },
+            {
+              "phase": "intake",
+              "status": "intake_completed",
+              "input_tokens": 6419,
+              "output_tokens": 435,
+              "reflection_run_id": null
+            }
+          ]
+        }
+      },
+      "checks": {
+        "reflection_preserves_originals_facts_activity": true,
+        "reflection_completed_or_safely_rejected": true,
+        "reflection_has_bound_sources": true,
+        "on_actual_context": true,
+        "on_bounded_chat_calls": true,
+        "on_required_answer": true,
+        "on_required_source": true,
+        "new_state_in_actual_context": true,
+        "same_snapshot": true
+      },
+      "passed": true,
+      "comparison": {
+        "state_change": "unchanged",
+        "quality": "requires_review",
+        "paired": false,
+        "note": "仅补测开启侧；不能据此推断相对改善，完整历史对照另存。"
+      }
+    }
+  ],
+  "failures": [],
+  "isolation": "random per-case base/off/on schemas; independent temporary journals; synthetic sources only",
+  "estimator_version": "utf8-half-v1",
+  "passed": true,
+  "cumulative_budget_before": {
+    "version": "reflection-qa-budget-v1",
+    "scope": "reflection-v0.5-frozen-synthetic-acceptance",
+    "fixture_sha256": "aa9fc19fd4e167491d11d3e434a603e9f258c6232cc686a464c11b1df9be59da",
+    "cumulative_limit": 238,
+    "charged_calls": 232,
+    "remaining_calls": 6,
+    "over_limit": false,
+    "reserved_pending_calls": 0,
+    "provider_usage": {
+      "known_input_tokens": 713340,
+      "known_output_tokens": 60205,
+      "complete": false
+    },
+    "historical_runs": 5,
+    "backfill_runs": [
+      {
+        "run_id": "3a5ac297-e81d-4b2b-af50-9b61ed76326b",
+        "calls": 3,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "275d45fe29340693f319a25c75d5852df625f7929658c7a621bf6ab30af13095"
+          }
+        ]
+      },
+      {
+        "run_id": "65a3db70-5bd6-41db-986a-9555e1d34f53",
+        "calls": 66,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "61d461e65f4de46899ecdfd9ad42daf49d765d7f3cf014a8d35990b26c963543"
+          },
+          {
+            "name": "verification-v0.5-20261027T013135995578Z-82e5345927ce4668817a6b993d49749e.json",
+            "sha256": "61d461e65f4de46899ecdfd9ad42daf49d765d7f3cf014a8d35990b26c963543"
+          }
+        ]
+      },
+      {
+        "run_id": "c00ce4e8-a81f-4a28-b19b-5cf63c08c032",
+        "calls": 21,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "b6c452dfcdfa79f8f9e8295e98e44a9cde0dcaf62d932eb5f10f3e10b34b1dfe"
+          },
+          {
+            "name": "verification-v0.5-20261027T014057962514Z-de7a3e0b803041aca0313269ace14979.json",
+            "sha256": "b6c452dfcdfa79f8f9e8295e98e44a9cde0dcaf62d932eb5f10f3e10b34b1dfe"
+          }
+        ]
+      },
+      {
+        "run_id": "legacy-c698722bf8ddb7522689310ba501b254b75beaf0ac2a15db76e69553c813247a",
+        "calls": 68,
+        "reports": [
+          {
+            "name": "verification-v0.5-20261026T110135547819Z-3008a6e8f79146d28a4f8bcb5b556d74.json",
+            "sha256": "66bc3fa92ff994a1e231abe211b88c74575bdeefd8767384495300d269a33207"
+          }
+        ]
+      },
+      {
+        "run_id": "legacy-ee2c904fc697574595bad020230f9e04eb0301443819885cfd21e23ebf0d4440",
+        "calls": 74,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "2f0431164476b0b2b7ebb3b93658c32e21fa65892819b604c5fa3964760b12f0"
+          },
+          {
+            "name": "verification-v0.5-20261027T010729000056Z-728f655785b543fcb07d8de7738b0b1c.json",
+            "sha256": "2f0431164476b0b2b7ebb3b93658c32e21fa65892819b604c5fa3964760b12f0"
+          }
+        ]
+      }
+    ],
+    "counting": "durable precharge; failures and interrupted reservations remain charged; not a billing claim"
+  },
+  "cloud_calls": 4,
+  "finished_at": "2026-10-27T01:50:38.637687+00:00",
+  "temporary_schemas_removed": true,
+  "cumulative_budget": {
+    "version": "reflection-qa-budget-v1",
+    "scope": "reflection-v0.5-frozen-synthetic-acceptance",
+    "fixture_sha256": "aa9fc19fd4e167491d11d3e434a603e9f258c6232cc686a464c11b1df9be59da",
+    "cumulative_limit": 238,
+    "charged_calls": 236,
+    "remaining_calls": 2,
+    "over_limit": false,
+    "reserved_pending_calls": 0,
+    "provider_usage": {
+      "known_input_tokens": 728305,
+      "known_output_tokens": 62751,
+      "complete": false
+    },
+    "historical_runs": 5,
+    "backfill_runs": [
+      {
+        "run_id": "3a5ac297-e81d-4b2b-af50-9b61ed76326b",
+        "calls": 3,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "275d45fe29340693f319a25c75d5852df625f7929658c7a621bf6ab30af13095"
+          }
+        ]
+      },
+      {
+        "run_id": "65a3db70-5bd6-41db-986a-9555e1d34f53",
+        "calls": 66,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "61d461e65f4de46899ecdfd9ad42daf49d765d7f3cf014a8d35990b26c963543"
+          },
+          {
+            "name": "verification-v0.5-20261027T013135995578Z-82e5345927ce4668817a6b993d49749e.json",
+            "sha256": "61d461e65f4de46899ecdfd9ad42daf49d765d7f3cf014a8d35990b26c963543"
+          }
+        ]
+      },
+      {
+        "run_id": "c00ce4e8-a81f-4a28-b19b-5cf63c08c032",
+        "calls": 21,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "b6c452dfcdfa79f8f9e8295e98e44a9cde0dcaf62d932eb5f10f3e10b34b1dfe"
+          },
+          {
+            "name": "verification-v0.5-20261027T014057962514Z-de7a3e0b803041aca0313269ace14979.json",
+            "sha256": "b6c452dfcdfa79f8f9e8295e98e44a9cde0dcaf62d932eb5f10f3e10b34b1dfe"
+          }
+        ]
+      },
+      {
+        "run_id": "legacy-c698722bf8ddb7522689310ba501b254b75beaf0ac2a15db76e69553c813247a",
+        "calls": 68,
+        "reports": [
+          {
+            "name": "verification-v0.5-20261026T110135547819Z-3008a6e8f79146d28a4f8bcb5b556d74.json",
+            "sha256": "66bc3fa92ff994a1e231abe211b88c74575bdeefd8767384495300d269a33207"
+          }
+        ]
+      },
+      {
+        "run_id": "legacy-ee2c904fc697574595bad020230f9e04eb0301443819885cfd21e23ebf0d4440",
+        "calls": 74,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "2f0431164476b0b2b7ebb3b93658c32e21fa65892819b604c5fa3964760b12f0"
+          },
+          {
+            "name": "verification-v0.5-20261027T010729000056Z-728f655785b543fcb07d8de7738b0b1c.json",
+            "sha256": "2f0431164476b0b2b7ebb3b93658c32e21fa65892819b604c5fa3964760b12f0"
+          }
+        ]
+      }
+    ],
+    "counting": "durable precharge; failures and interrupted reservations remain charged; not a billing claim"
+  },
+  "process_exit_code": 0
+}

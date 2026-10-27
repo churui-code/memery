@@ -1,0 +1,110 @@
+{
+  "version": "0.5",
+  "as_of": "2026-10-27T02:12:54.494573+00:00",
+  "synthetic_only": true,
+  "current_policy_version": "reflection-v1.5",
+  "passed": false,
+  "production_enabled": false,
+  "calls": {
+    "prior": 142,
+    "additional_authorized": 96,
+    "additional_used": 96,
+    "cumulative_authorized": 238,
+    "cumulative_used": 238,
+    "remaining": 0
+  },
+  "runs": [
+    {
+      "policy_version": "reflection-v1",
+      "cloud_calls": 68,
+      "report": "verification-history/verification-v0.5-20261026T110135547819Z-3008a6e8f79146d28a4f8bcb5b556d74.json",
+      "scope": "full_pairs",
+      "outcome": "failed",
+      "started_at": "2026-10-26T10:41:38.747342+00:00",
+      "run_id": null,
+      "release_gate_passed": false
+    },
+    {
+      "policy_version": "reflection-v1.1",
+      "cloud_calls": 74,
+      "report": "verification-history/verification-v0.5-20261027T010729000056Z-728f655785b543fcb07d8de7738b0b1c.json",
+      "scope": "full_pairs",
+      "outcome": "failed",
+      "started_at": "2026-10-26T10:57:07.343760+00:00",
+      "run_id": null,
+      "release_gate_passed": false
+    },
+    {
+      "policy_version": "reflection-v1.2",
+      "cloud_calls": 66,
+      "report": "verification-history/verification-v0.5-20261027T013135995578Z-82e5345927ce4668817a6b993d49749e.json",
+      "scope": "full_pairs",
+      "outcome": "2 improved, 3 unchanged, 3 regressed, 4 incomplete",
+      "started_at": "2026-10-27T01:01:22.984049+00:00",
+      "run_id": "65a3db70-5bd6-41db-986a-9555e1d34f53",
+      "release_gate_passed": false
+    },
+    {
+      "policy_version": "reflection-v1.3",
+      "cloud_calls": 21,
+      "report": "verification-history/verification-v0.5-20261027T014057962514Z-de7a3e0b803041aca0313269ace14979.json",
+      "scope": "on_only_8_cases",
+      "outcome": "failed_source_support_and_answer_support; incomplete cases",
+      "started_at": "2026-10-27T01:29:38.484908+00:00",
+      "run_id": "c00ce4e8-a81f-4a28-b19b-5cf63c08c032",
+      "release_gate_passed": false
+    },
+    {
+      "policy_version": "reflection-v1.4",
+      "cloud_calls": 3,
+      "report": "verification-history/verification-v0.5-20261027T015038897328Z-375cc913c4e248d3aad3b2cc1a2181af.json",
+      "scope": "on_only_fiction",
+      "outcome": "unsupported historical absence in stored reason; next chat failed",
+      "started_at": "2026-10-27T01:40:40.528763+00:00",
+      "run_id": "3a5ac297-e81d-4b2b-af50-9b61ed76326b",
+      "release_gate_passed": false
+    },
+    {
+      "policy_version": "reflection-v1.5",
+      "cloud_calls": 4,
+      "report": "verification-v0.5-fiction.json",
+      "scope": "on_only_fiction",
+      "outcome": "safe reflection rejection; actual answer wrong amount/object",
+      "started_at": "2026-10-27T01:50:03.567704+00:00",
+      "run_id": "cd602a06-aa4c-4155-932e-e3b0f69f760a",
+      "release_gate_passed": false
+    },
+    {
+      "policy_version": "reflection-v1.5",
+      "cloud_calls": 2,
+      "report": "verification-v0.5.json",
+      "scope": "baseline_chat_only_counterexample",
+      "outcome": "specific past-background error not reproduced; no reflection evaluated",
+      "started_at": "2026-10-27T01:51:39.086375+00:00",
+      "run_id": "6892c883-d8d6-4b81-b8c6-27a0818b3947",
+      "release_gate_passed": false
+    }
+  ],
+  "local_checks": {
+    "command": "python3 scripts/manage.py test",
+    "passed": 460,
+    "failed": 0,
+    "subtests_passed": 5,
+    "seconds": 77.14,
+    "warning": "Existing Starlette TestClient httpx deprecation",
+    "host_budget_tests_passed": 13,
+    "frozen_mock_pairs_passed": 12,
+    "mock_cloud_calls": 0,
+    "at": "2026-10-27T02:12:54.494573+00:00",
+    "image": "sha256:cbdff373eb37f48fbabfc695bd864f0d7d7b1943d58030974d8738a50aef7f98",
+    "includes_final_readonly_clarification_fix": true
+  },
+  "release_blockers": [
+    "Latest full paired live suite failed; latest policy has not completed all 12 pairs.",
+    "Last fiction diagnostic answered snacks 52 yuan although source says silver ring 52 yuan. Local clarification-removal regression passes but is not live revalidated.",
+    "Lexical scope guard can reject valid negation, hypothetical or paraphrased claims and is not a full semantic verifier."
+  ],
+  "deployment_report": "deployment-v0.5.json",
+  "budget_report": "verification-v0.5-budget.json",
+  "rule": "Programmatic completion, safe rejection, diagnostic chat success and additional state count are not proof of reflection benefit."
+}

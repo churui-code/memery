@@ -28,7 +28,10 @@ def prepare(repo,events=None,states=None,**kwargs):
         for eid in event['source_experience_ids']:
             original=repo.experience(eid)
             refs.append({'source_type':'experience','id':str(eid),'revision':original['revision'],
-                         'source_hash':original['source_hash'],'hash':original['source_hash'],'spans':[]})
+                         'source_hash':original['source_hash'],'hash':original['source_hash'],
+                         'spans':[{key:row[key] for key in ('role','start','end','source_revision','source_hash')}|
+                                  {'id':str(row['id']),'hash':content_hash(row['quote'])}
+                                  for row in event['evidence'] if str(row['experience_id'])==str(eid)]})
     targets=[]
     for state in states or []:
         refs.append({'source_type':'self','id':str(state['id']),'revision':state['revision'],
@@ -252,7 +255,8 @@ def test_deleted_self_key_stays_blocked_until_a_new_chat_version(repo):
     assert state['revision']==2 and not state['deleted_at']
     job=start(repo,states=[state])
     calls(repo,job)
-    save(repo,job,[update(event,target_id=state['id'],expected_revision=2)])
+    save(repo,job,[update(event,target_id=state['id'],expected_revision=2,
+        text='承诺值得重新讨论。',reason='新的合成对话重新讨论承诺。')])
     assert repo.self_state()[0]['revision']==3
 
 
@@ -578,7 +582,8 @@ def test_emotion_commit_direction_uses_frozen_displayed_intensity_not_commit_tim
     repo.clock.advance(hours=1)
     assert repo.self_state()[0]['current_intensity']==.2
     proposal=update(event,key='担忧',domain='emotion',target_id=old['id'],expected_revision=1,
-                    intensity=.3,half_life_hours=2,intensity_direction='decrease')
+                    intensity=.3,half_life_hours=2,intensity_direction='decrease',
+                    text='这项担忧有所缓解。',reason='新的合成证据缓解了这项担忧。')
     completed=save(repo,job,[proposal])
     assert completed['status']=='completed'
     current=repo.self_state()[0]
@@ -665,3 +670,34 @@ def test_invalid_quota_merge_is_atomic_and_does_not_fabricate_usage(repo,bad):
 def test_missing_schema_six_quota_table_is_not_treated_as_unused_quota(repo):
     with repo.pool.connection() as c:c.execute('DROP TABLE reflection_daily_usage')
     with pytest.raises(Exception):export_reflection_quota(repo)
+
+
+@pytest.mark.parametrize('text,claim',[
+    ('这件事是转述，我尚未收到正式通知。','只有直接收到的正式通知才能确定安排。'),
+    ('疲惫时我有时想独处。','用户在疲惫时倾向于独处。'),
+])
+def test_scope_violation_rolls_back_even_when_model_review_accepts(repo,text,claim):
+    event=source(repo,text)
+    job=start(repo)
+    calls(repo,job)
+    proposal=update(event,text=claim,reason='根据这段原文形成解释。')
+    before=repo.epoch()
+    with pytest.raises(MemoryError,match='reflection_scope_unsupported'):
+        save(repo,job,[proposal])
+    assert repo.epoch()==before
+    assert count(repo,'self_observations')==count(repo,'reflection_processed_episodes')==0
+    assert repo.reflection_run(job['id'])['status']=='running'
+
+
+def test_cross_event_reason_requires_both_sources_even_with_positive_review(repo):
+    first=source(repo,'合成故事5月1日出现紫藤戒指。')
+    second=source(repo,'合成故事6月2日出现银戒指。')
+    job=start(repo)
+    calls(repo,job)
+    proposal=update(second,text='6月2日故事出现银戒指。',
+        reason='该版本与5月1日紫藤戒指版本不同。')
+    with pytest.raises(MemoryError,match='reflection_scope_unsupported'):
+        save(repo,job,[proposal])
+    assert count(repo,'self_observations')==count(repo,'reflection_processed_episodes')==0
+    proposal['evidence_ids'] += [str(first['evidence'][0]['id'])]
+    assert save(repo,job,[proposal])['status']=='completed'

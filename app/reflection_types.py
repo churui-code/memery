@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from app.errors import MemoryError
 from app.life import tool_list
 from app.source_units import source_units
+from app.reflection_scope import validate_reflection_scope
 
 
 class ReflectionUpdate(BaseModel):
@@ -148,7 +149,7 @@ def validate_reflection_proposal(raw, payload):
                                  else 'increase' if difference > 0 else 'decrease')
                     if update.intensity_direction != direction:
                         raise ValueError('reflection_emotion_direction_mismatch')
-        return proposal
+        return validate_reflection_scope(proposal, payload)
     except (ValueError, TypeError, KeyError) as exc:
         raise MemoryError('reflection_proposal_invalid', '反思提案未通过来源、目标版本或格式校验，没有写入。', 502) from exc
 

@@ -1,5 +1,5 @@
 {
-  "date": "2026-10-26T20:37:54.899557+00:00",
+  "date": "2026-10-27T02:12:54.494573+00:00",
   "lab_health": {
     "database": "ok",
     "version": "0.5.0",
@@ -17,14 +17,14 @@
   "lab_encrypted_backup": "data/upgrades/v0.5-pre/lab-schema5-20261026T202115Z.hmem",
   "production_deployed": false,
   "production_reflection_enabled": false,
-  "reason": "v1.2 real semantic acceptance pending; cumulative live budget exhausted",
+  "reason": "Real semantic acceptance did not pass. 238/238 authorized calls used; final local answer fix has no live revalidation. Production remains v0.4/schema5; automatic reflection off.",
   "production_baseline": {
     "schema": 5,
     "original_rows": 0,
     "original_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
   },
   "production_encrypted_backup": "data/backups/memory-20261027-061535-330658.hmem",
-  "candidate_image": "sha256:c8e63a8fb599ebf5855b882dde969d10eb74d75026b890923046d03989e66cde",
+  "candidate_image": "sha256:cbdff373eb37f48fbabfc695bd864f0d7d7b1943d58030974d8738a50aef7f98",
   "lab_checks": {
     "lab_unauthenticated_rejected": true,
     "lab_production_api_unregistered": true,
@@ -35,5 +35,43 @@
   },
   "ui_screenshot": "docs/lab-v0.5.png",
   "isolated_upgrade_verified": true,
-  "isolated_upgrade_report": "docs/verification-v0.5-upgrade.json"
+  "isolated_upgrade_report": "docs/verification-v0.5-upgrade.json",
+  "live_call_authorization": {
+    "additional": 96,
+    "prior": 142,
+    "total_ceiling": 238,
+    "charged": 238,
+    "remaining": 0,
+    "additional_used": 96
+  },
+  "previous_candidate_image": "sha256:c8e63a8fb599ebf5855b882dde969d10eb74d75026b890923046d03989e66cde",
+  "policy_version": "reflection-v1.5",
+  "lab_schema": 6,
+  "lab_automatic_reflection_enabled": false,
+  "production_schema": 5,
+  "production_health": {
+    "database": "ok",
+    "version": "0.4.0",
+    "automatic_memory": true,
+    "memories": 0,
+    "episodes": 0,
+    "episode_index_jobs": {},
+    "experiences": 0,
+    "experience_retention": "until_deleted",
+    "experience_index_jobs": {},
+    "index_jobs": {},
+    "model": "MiniMax-M3"
+  },
+  "production_image": "sha256:b9faa58846bcff264848460b9c23289c35554d21006c4d7dc0f061ca5959b1eb",
+  "final_local_checks": {
+    "complete_pytest": 460,
+    "host_budget_tests": 13,
+    "mock_pairs": 12,
+    "cloud_calls": 0,
+    "lab_api_recreated_healthy": true,
+    "production_schema_readback": 5,
+    "lab_schema_readback": 6,
+    "lab_reflection_enabled_readback": false,
+    "reflector_running": false
+  }
 }

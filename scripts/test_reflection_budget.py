@@ -164,5 +164,21 @@ class LedgerTests(unittest.TestCase):
         self.assertEqual(len(copies),1)
         self.assertEqual(copies[0].read_bytes(),before)
 
+    def test_diagnostic_on_only_is_forwarded_without_changing_budget(self):
+        self.ledger.backfill(self.seed_history())
+        docs=self.root/'docs';docs.mkdir()
+        fake={'passed':True,'cloud_calls':0,'diagnostic_on_only':True,'full_suite':False,'arms':['on']}
+        with patch.object(verification,'__file__',str(self.root/'scripts'/'verify_reflection_v5.py')), \
+             patch('sys.argv',['verify_reflection_v5.py','--on-only','--cases','shared-meaning']), \
+             patch.object(verification.subprocess,'run') as run:
+            run.return_value.stdout=json.dumps(fake)
+            run.return_value.returncode=0
+            self.assertEqual(verification.main(),0)
+        self.assertIn('--on-only',run.call_args.args[0])
+        actual=json.loads((docs/'verification-v0.5-mock.json').read_text())
+        self.assertFalse(actual['full_suite'])
+        self.assertEqual(actual['arms'],['on'])
+        self.assertEqual(self.ledger.snapshot()['charged_calls'],142)
+
 
 if __name__=='__main__':unittest.main()

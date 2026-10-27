@@ -1,21 +1,96 @@
 {
   "version": "0.5",
-  "policy_version": "reflection-v1.2",
+  "policy_version": "reflection-v1.5",
   "regression": {
     "command": "python3 scripts/manage.py test",
-    "passed": 397,
+    "passed": 460,
     "failed": 0,
-    "seconds": 68.79,
+    "subtests_passed": 5,
+    "seconds": 77.14,
     "warning": "Existing Starlette TestClient httpx deprecation"
   },
   "host_budget_tests": {
     "command": "python3 -m unittest discover -s scripts -p 'test_reflection_budget.py' -v",
-    "passed": 12
+    "passed": 13
   },
   "frozen_mock_pairs": {
     "passed": 12,
     "cloud_calls": 0
   },
   "production_release": false,
-  "reason": "Latest semantic policy has not completed real-model acceptance; cumulative QA budget exceeded and further cloud calls blocked."
+  "reason": "Live semantic acceptance failed/incomplete; authorized 238 calls exhausted; final local fix not live revalidated.",
+  "live_acceptance_authorization": {
+    "date": "2026-10-27",
+    "additional_calls": 96,
+    "prior_calls": 142,
+    "cumulative_limit": 238,
+    "condition": "Only enable production after real semantic acceptance passes"
+  },
+  "latest_followup": {
+    "date": "2026-10-27",
+    "policy_version": "reflection-v1.3",
+    "pytest": {
+      "passed": 446,
+      "subtests_passed": 5,
+      "failed": 0,
+      "seconds": 75.17,
+      "warnings": 1
+    },
+    "host_budget_tests": 13,
+    "scope_tests": 30,
+    "changes": [
+      "source scope and provenance guards",
+      "frozen source reconstruction in commit",
+      "provider ID enums",
+      "nonretention and source role contracts"
+    ],
+    "production_enabled": false,
+    "mock_pairs_passed": 12
+  },
+  "latest_projection_followup": {
+    "policy_version": "reflection-v1.4",
+    "targeted_passed": 152,
+    "subtests_passed": 5,
+    "seconds": 33.66,
+    "failed": 0,
+    "change": "derived event summaries, scoring rationales and detail interpretations are no longer sent to reflection proposal/review"
+  },
+  "final_regression": {
+    "command": "python3 scripts/manage.py test",
+    "passed": 460,
+    "failed": 0,
+    "subtests_passed": 5,
+    "seconds": 77.14,
+    "warning": "Existing Starlette TestClient httpx deprecation",
+    "host_budget_tests_passed": 13,
+    "frozen_mock_pairs_passed": 12,
+    "mock_cloud_calls": 0,
+    "at": "2026-10-27T02:12:54.494573+00:00",
+    "image": "sha256:cbdff373eb37f48fbabfc695bd864f0d7d7b1943d58030974d8738a50aef7f98",
+    "includes_final_readonly_clarification_fix": true
+  },
+  "baseline_regression": {
+    "command": "python3 scripts/manage.py test",
+    "passed": 397,
+    "failed": 0,
+    "seconds": 68.79,
+    "warning": "Existing Starlette TestClient httpx deprecation"
+  },
+  "previous_final_regression": {
+    "collected": 459,
+    "full_run_passed": 458,
+    "full_run_failure": "one obsolete prompt wording assertion; implementation checks passed",
+    "repair": "updated assertion from absent old state to undisplayed old state; no runtime change",
+    "recheck": {
+      "file": "tests/test_reflection_core.py",
+      "passed": 32,
+      "failed": 0,
+      "seconds": 0.22
+    },
+    "subtests_passed": 5,
+    "warnings": 1,
+    "full_run_seconds": 82.69,
+    "all_cases_verified": true,
+    "host_budget_tests_passed": 13
+  }
 }

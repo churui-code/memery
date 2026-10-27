@@ -1,8 +1,10 @@
 """MiniMax Anthropic Messages transport. Never retain thinking or provider error bodies."""
 import asyncio
+import json
 from contextlib import contextmanager
 from contextvars import ContextVar
 from time import monotonic
+from uuid import UUID
 import httpx
 from app.errors import MemoryError
 
@@ -48,25 +50,64 @@ def inline_tool_schema(schema):
             # Require an explicit consideration, including [] when no genuine
             # change occurred; a new personal fact is not a prerequisite.
             result['required'] = list(dict.fromkeys([*result.get('required', []), 'self_updates']))
-            properties['self_updates']['description'] = '必填，独立判断本轮是否形成或修订有依据的情绪、关系、观点或目标。actions为空仍可有自己的新观点；无真实变化则明确返回[]。'
+            properties['self_updates']['description'] = '必填数组。retain_turn=false或forget时必须为[]；允许留存时独立判断有据的认识变化，无变化返回[]。'
+        if 'retain_turn' in properties:
+            result['required'] = list(dict.fromkeys([*result.get('required', []), 'retain_turn']))
+            properties['retain_turn']['description'] = '不留存时为false，experience必须为null，episodes/self_updates/rehearsals=[]；actions仅可含明确要求的forget。'
         return result
     return visit(schema)
 
 
-def structured_tool(phase):
+def _reflection_schema(schema, phase, payload):
+    """Constrain provider IDs to the same frozen sources validated locally."""
+    evidence_ids = set()
+    for episode in payload.get('episodes', []):
+        for evidence in episode.get('evidence', []):
+            value = evidence.get('id')
+            try:
+                UUID(value)
+            except (ValueError, TypeError, AttributeError):
+                continue
+            evidence_ids.add(value)
+    if phase == 'reflection_proposal':
+        field = schema['properties']['updates']['items']['properties']['evidence_ids']
+        field['items']['enum'] = sorted(evidence_ids)
+        field['description'] += ' 必须逐字选择enum中的原文证据ID，不得使用episode/self/target的ID。'
+        return schema
+    proposals = payload.get('proposals', [])
+    units = payload.get('review_units', [])
+    mapping = {row['id']: {'evidence_ids': sorted(set(row['evidence_ids']) & evidence_ids),
+        'unit_ids': [unit['unit_id'] for unit in units if unit['proposal_id'] == row['id']]}
+        for row in proposals}
+    fields = schema['properties']['reviews']['items']['properties']
+    fields['proposal_id']['enum'] = list(mapping)
+    checks = fields['checks']['items']['properties']
+    checks['unit_id']['enum'] = [uid for row in mapping.values() for uid in row['unit_ids']]
+    checks['evidence_ids']['items']['enum'] = sorted({eid for row in mapping.values() for eid in row['evidence_ids']})
+    # A global enum prevents invented IDs; the server still checks each exact
+    # proposal/unit/source association instead of trusting the provider schema.
+    fields['checks']['description'] = ('每条review只可使用该proposal对应的unit_ids和evidence_ids；'
+        '逐一覆盖全部unit_ids且不得重复。对应关系：' + json.dumps(mapping, ensure_ascii=False, separators=(',', ':')))
+    return schema
+
+
+def structured_tool(phase, payload=None):
     from app.automatic import MemoryDecision, MemoryReassessment
     if phase == 'intake':
-        return {'name': 'propose_memories', 'description': '提出本轮记忆变更；空 actions 表示不应写入。',
+        return {'name': 'propose_memories', 'description': '先决定留存，再提出允许的事实与内部状态变更。',
                 'input_schema': inline_tool_schema(MemoryDecision.model_json_schema())}
     if phase == 'reassessment':
         return {'name': 'reassess_memories', 'description': '根据最终证据重评经历与内部状态，不改变固定事实操作。',
                 'input_schema': inline_tool_schema(MemoryReassessment.model_json_schema())}
     if phase in ('reflection_proposal', 'reflection_review'):
         from app.reflection_types import ReflectionProposal, ReflectionReview
-        schema = ReflectionProposal if phase == 'reflection_proposal' else ReflectionReview
+        model = ReflectionProposal if phase == 'reflection_proposal' else ReflectionReview
+        schema = inline_tool_schema(model.model_json_schema())
+        if payload is not None:
+            schema = _reflection_schema(schema, phase, payload)
         return {'name': 'propose_reflection' if phase == 'reflection_proposal' else 'review_reflection',
                 'description': '根据冻结原文提出内部认识变化。' if phase == 'reflection_proposal' else '逐句核对原反思提案与绑定证据，完整返回各单元判定后接受或拒绝，不修改提案。',
-                'input_schema': inline_tool_schema(schema.model_json_schema())}
+                'input_schema': schema}
     return None
 
 
@@ -116,10 +157,10 @@ class MiniMax:
         return self._structured(system,prompt,structured_tool('reassessment'))
 
     def propose_reflection(self,system,prompt):
-        return self._structured(system,prompt,structured_tool('reflection_proposal'))
+        return self._structured(system,prompt,structured_tool('reflection_proposal', json.loads(prompt)))
 
     def review_reflection(self,system,prompt):
-        return self._structured(system,prompt,structured_tool('reflection_review'))
+        return self._structured(system,prompt,structured_tool('reflection_review', json.loads(prompt)))
 
     def _structured(self,system,prompt,tool):
         data=self._request(system,[{'role':'user','content':prompt}],tool=tool)

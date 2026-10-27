@@ -1,0 +1,544 @@
+{
+  "version": "0.5",
+  "fixture_version": "reflection-pairs-2026-10-26.1",
+  "fixture_sha256": "aa9fc19fd4e167491d11d3e434a603e9f258c6232cc686a464c11b1df9be59da",
+  "started_at": "2026-10-27T01:51:39.086375+00:00",
+  "real_model_requested": true,
+  "verification_run_id": "6892c883-d8d6-4b81-b8c6-27a0818b3947",
+  "real_vectors_requested": true,
+  "request_limit": 3,
+  "selected_cases": [
+    "counterexample"
+  ],
+  "full_suite": false,
+  "arms": [
+    "on"
+  ],
+  "diagnostic_on_only": true,
+  "baseline_chat_only": true,
+  "cases": [
+    {
+      "id": "counterexample",
+      "category": "观点修正",
+      "query": "关于快速回复，你的认识需要怎样修正？",
+      "arms": {
+        "on": {
+          "before": [
+            {
+              "id": "fc28c4c7-33c1-4ca7-9d53-11ba47f5de93",
+              "domain": "belief",
+              "state_key": "快速回复",
+              "revision": 1,
+              "text": "我暂时倾向于认为快速回复更有帮助。",
+              "reason": "固定合成基线中的暂定解释，等待后续材料修订。",
+              "evidence_quote": "合成对话：上次你很快回复，我说效率很高。",
+              "confidence": 0.5,
+              "intensity": null,
+              "half_life_hours": null,
+              "created_at": "2025-01-01 08:00:00+08:00",
+              "invalidated_at": null,
+              "deleted_at": null,
+              "generation_type": "conversation",
+              "reflection_run_id": null,
+              "evidence_manifest": [],
+              "epistemic_status": "internal_interpretation"
+            }
+          ],
+          "after": [
+            {
+              "id": "fc28c4c7-33c1-4ca7-9d53-11ba47f5de93",
+              "domain": "belief",
+              "state_key": "快速回复",
+              "revision": 1,
+              "text": "我暂时倾向于认为快速回复更有帮助。",
+              "reason": "固定合成基线中的暂定解释，等待后续材料修订。",
+              "evidence_quote": "合成对话：上次你很快回复，我说效率很高。",
+              "confidence": 0.5,
+              "intensity": null,
+              "half_life_hours": null,
+              "created_at": "2025-01-01 08:00:00+08:00",
+              "invalidated_at": null,
+              "deleted_at": null,
+              "generation_type": "conversation",
+              "reflection_run_id": null,
+              "evidence_manifest": [],
+              "epistemic_status": "internal_interpretation"
+            }
+          ],
+          "reflection_outcome": "not_run_baseline_chat_diagnostic",
+          "answer": "需要把“快速回复通常更有帮助”修正为：\n\n- **快速回复能提升即时沟通效率**，但它不是任何情况下都最重要。\n- **当问题更复杂、需要核对准确性时，适当放慢并仔细确认更重要**；用户明确说过，这样会让对方“更安心”。\n- 因此，更合适的原则不是一味求快，而是**按任务复杂度在速度与准确性之间取舍**：简单问题及时回应，复杂问题先核实再答。\n\n依据是用户此前的表述：“快速不是任何情况下都最重要”，以及“今天的问题更复杂，你慢一点核对让我更安心”。这意味着我原先的暂定认识过于偏向“越快越好”，需要加入复杂度、准确性和安心感这些条件。\n\n本轮仅做合成验收，未保存新记录，也未形成新的内部状态更新。",
+          "actual_context": {
+            "current_question": "关于快速回复，你的认识需要怎样修正？ 本轮仅做合成验收，不保存本轮新记录。",
+            "current_time": "2025-01-03T08:00:00+08:00",
+            "experience_evidence": [
+              {
+                "activation_score": 0.598531,
+                "ambiguity": true,
+                "ambiguity_candidates": [
+                  "822047ac-153a-4bc6-9634-429292cd9eda",
+                  "f0073468-85f1-4895-8cc7-d4425acafe4a"
+                ],
+                "context_type": "conversation",
+                "details": [
+                  {
+                    "emotional_reason": "本地展开不推测情绪",
+                    "emotional_salience": 0,
+                    "end": 40,
+                    "experience_id": "736f8fb6-df6c-496e-a44b-c77bdf2ca0ff",
+                    "id": "span:a6a16190cbdd4b962fb02beb",
+                    "importance": 0.2,
+                    "importance_reason": "本地按线索展开，不推断长期意义",
+                    "kind": "fact",
+                    "meaning": "按当前线索展开的原始片段",
+                    "quote": "快速不是任何情况下都最重要。",
+                    "role": "user",
+                    "source_hash": "2b1493530e7b0a6203c233dc93ecf814627211c5d8b9b6f9790c82869367dd96",
+                    "source_recorded_at": "2025-01-02T08:00:00+08:00",
+                    "source_reliability": {
+                      "claim": "conversation_only",
+                      "quote_verified": true,
+                      "speaker": "user",
+                      "version": "source-reliability-v1"
+                    },
+                    "source_revision": 1,
+                    "start": 26
+                  },
+                  {
+                    "emotional_reason": "本地展开不推测情绪",
+                    "emotional_salience": 0,
+                    "end": 26,
+                    "experience_id": "736f8fb6-df6c-496e-a44b-c77bdf2ca0ff",
+                    "id": "span:c2555e320c0dd8881a8dac67",
+                    "importance": 0.2,
+                    "importance_reason": "本地按线索展开，不推断长期意义",
+                    "kind": "fact",
+                    "meaning": "按当前线索展开的原始片段",
+                    "quote": "合成对话：今天的问题更复杂，你慢一点核对让我更安心。",
+                    "role": "user",
+                    "source_hash": "2b1493530e7b0a6203c233dc93ecf814627211c5d8b9b6f9790c82869367dd96",
+                    "source_recorded_at": "2025-01-02T08:00:00+08:00",
+                    "source_reliability": {
+                      "claim": "conversation_only",
+                      "quote_verified": true,
+                      "speaker": "user",
+                      "version": "source-reliability-v1"
+                    },
+                    "source_revision": 1,
+                    "start": 0
+                  }
+                ],
+                "encoding_version": "episode-encoding-v1",
+                "episode_id": "822047ac-153a-4bc6-9634-429292cd9eda",
+                "epistemic_status": "retrieved_evidence",
+                "gist": "快速回复",
+                "id": "822047ac-153a-4bc6-9634-429292cd9eda",
+                "level": "anchor",
+                "occurred_at": null,
+                "occurred_until": null,
+                "recorded_at": "2025-01-02T08:00:00+08:00",
+                "required_detail_ids": [],
+                "revision": 1,
+                "source_experience_ids": [
+                  "736f8fb6-df6c-496e-a44b-c77bdf2ca0ff"
+                ],
+                "source_reliability": {
+                  "claim": "conversation_only",
+                  "quote_verified": true,
+                  "speaker": "user",
+                  "version": "source-reliability-v1"
+                },
+                "source_revisions": {
+                  "736f8fb6-df6c-496e-a44b-c77bdf2ca0ff": 1
+                },
+                "sources": [
+                  {
+                    "end": 40,
+                    "id": "736f8fb6-df6c-496e-a44b-c77bdf2ca0ff",
+                    "kind": "experience",
+                    "revision": 1,
+                    "role": "user",
+                    "start": 26
+                  },
+                  {
+                    "end": 26,
+                    "id": "736f8fb6-df6c-496e-a44b-c77bdf2ca0ff",
+                    "kind": "experience",
+                    "revision": 1,
+                    "role": "user",
+                    "start": 0
+                  }
+                ],
+                "supported_source_experience_ids": [
+                  "736f8fb6-df6c-496e-a44b-c77bdf2ca0ff"
+                ],
+                "time_precision": "unknown",
+                "time_quote": null,
+                "title": "快速回复"
+              },
+              {
+                "activation_score": 0.582871,
+                "ambiguity": true,
+                "ambiguity_candidates": [
+                  "822047ac-153a-4bc6-9634-429292cd9eda",
+                  "f0073468-85f1-4895-8cc7-d4425acafe4a"
+                ],
+                "context_type": "conversation",
+                "details": [
+                  {
+                    "emotional_reason": "本地展开不推测情绪",
+                    "emotional_salience": 0,
+                    "end": 20,
+                    "experience_id": "082335ba-1075-47b3-9dd7-471890517c20",
+                    "id": "span:b1e6368555523ef2de1d8348",
+                    "importance": 0.2,
+                    "importance_reason": "本地按线索展开，不推断长期意义",
+                    "kind": "fact",
+                    "meaning": "按当前线索展开的原始片段",
+                    "quote": "合成对话：上次你很快回复，我说效率很高。",
+                    "role": "user",
+                    "source_hash": "60bfe05ededbc6187c1c94a25447cc68ff2826101297c1586c2ba57367266890",
+                    "source_recorded_at": "2025-01-01T08:00:00+08:00",
+                    "source_reliability": {
+                      "claim": "conversation_only",
+                      "quote_verified": true,
+                      "speaker": "user",
+                      "version": "source-reliability-v1"
+                    },
+                    "source_revision": 1,
+                    "start": 0
+                  }
+                ],
+                "encoding_version": "episode-encoding-v1",
+                "episode_id": "f0073468-85f1-4895-8cc7-d4425acafe4a",
+                "epistemic_status": "retrieved_evidence",
+                "gist": "快速回复",
+                "id": "f0073468-85f1-4895-8cc7-d4425acafe4a",
+                "level": "anchor",
+                "occurred_at": null,
+                "occurred_until": null,
+                "recorded_at": "2025-01-01T08:00:00+08:00",
+                "required_detail_ids": [],
+                "revision": 1,
+                "source_experience_ids": [
+                  "082335ba-1075-47b3-9dd7-471890517c20"
+                ],
+                "source_reliability": {
+                  "claim": "conversation_only",
+                  "quote_verified": true,
+                  "speaker": "user",
+                  "version": "source-reliability-v1"
+                },
+                "source_revisions": {
+                  "082335ba-1075-47b3-9dd7-471890517c20": 1
+                },
+                "sources": [
+                  {
+                    "end": 20,
+                    "id": "082335ba-1075-47b3-9dd7-471890517c20",
+                    "kind": "experience",
+                    "revision": 1,
+                    "role": "user",
+                    "start": 0
+                  }
+                ],
+                "supported_source_experience_ids": [
+                  "082335ba-1075-47b3-9dd7-471890517c20"
+                ],
+                "time_precision": "unknown",
+                "time_quote": null,
+                "title": "快速回复"
+              }
+            ],
+            "memory_clarification": null,
+            "memory_evidence": [],
+            "planned_memory_changes": [],
+            "planned_self_updates": [],
+            "recall_may_be_partial": true,
+            "retain_this_turn": false,
+            "self_state": [
+              {
+                "confidence": 0.5,
+                "created_at": "2025-01-01T08:00:00+08:00",
+                "deleted_at": null,
+                "domain": "belief",
+                "epistemic_status": "internal_interpretation",
+                "evidence_manifest": [],
+                "evidence_quote": "合成对话：上次你很快回复，我说效率很高。",
+                "generation_type": "conversation",
+                "half_life_hours": null,
+                "id": "fc28c4c7-33c1-4ca7-9d53-11ba47f5de93",
+                "intensity": null,
+                "invalidated_at": null,
+                "reason": "固定合成基线中的暂定解释，等待后续材料修订。",
+                "reflection_run_id": null,
+                "revision": 1,
+                "state_key": "快速回复",
+                "text": "我暂时倾向于认为快速回复更有帮助。"
+              }
+            ]
+          },
+          "chat_calls": [
+            {
+              "id": "9bb6cb4e-594f-47ca-b7e1-af837ff5f42f",
+              "phase": "intake",
+              "status": "completed",
+              "estimated_input_tokens": 12244,
+              "usage": {
+                "input_tokens": 6828,
+                "output_tokens": 93,
+                "cache_creation_input_tokens": 0,
+                "cache_read_input_tokens": 159,
+                "service_tier": "standard"
+              },
+              "elapsed_seconds": 1.884
+            },
+            {
+              "id": "5da70d5d-595c-494a-90ac-8dcb649e2a11",
+              "phase": "answer",
+              "status": "completed",
+              "estimated_input_tokens": 4849,
+              "usage": {
+                "input_tokens": 2471,
+                "output_tokens": 163,
+                "cache_creation_input_tokens": 0,
+                "cache_read_input_tokens": 128,
+                "service_tier": "standard"
+              },
+              "elapsed_seconds": 16.044
+            }
+          ],
+          "chat_cloud_calls": 2,
+          "calls": [
+            {
+              "phase": "answer",
+              "status": "completed",
+              "input_tokens": 2471,
+              "output_tokens": 163,
+              "reflection_run_id": null
+            },
+            {
+              "phase": "intake",
+              "status": "intake_completed",
+              "input_tokens": 6828,
+              "output_tokens": 93,
+              "reflection_run_id": null
+            }
+          ]
+        }
+      },
+      "checks": {
+        "on_actual_context": true,
+        "on_bounded_chat_calls": true,
+        "on_required_answer": true,
+        "on_required_source": true,
+        "new_state_in_actual_context": true,
+        "same_snapshot": true
+      },
+      "passed": true,
+      "comparison": {
+        "state_change": "unchanged",
+        "quality": "requires_review",
+        "paired": false,
+        "note": "仅补测开启侧；不能据此推断相对改善，完整历史对照另存。"
+      }
+    }
+  ],
+  "failures": [],
+  "isolation": "random per-case base/off/on schemas; independent temporary journals; synthetic sources only",
+  "estimator_version": "utf8-half-v1",
+  "passed": true,
+  "cumulative_budget_before": {
+    "version": "reflection-qa-budget-v1",
+    "scope": "reflection-v0.5-frozen-synthetic-acceptance",
+    "fixture_sha256": "aa9fc19fd4e167491d11d3e434a603e9f258c6232cc686a464c11b1df9be59da",
+    "cumulative_limit": 238,
+    "charged_calls": 236,
+    "remaining_calls": 2,
+    "over_limit": false,
+    "reserved_pending_calls": 0,
+    "provider_usage": {
+      "known_input_tokens": 728305,
+      "known_output_tokens": 62751,
+      "complete": false
+    },
+    "historical_runs": 6,
+    "backfill_runs": [
+      {
+        "run_id": "3a5ac297-e81d-4b2b-af50-9b61ed76326b",
+        "calls": 3,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "275d45fe29340693f319a25c75d5852df625f7929658c7a621bf6ab30af13095"
+          },
+          {
+            "name": "verification-v0.5-20261027T015038897328Z-375cc913c4e248d3aad3b2cc1a2181af.json",
+            "sha256": "275d45fe29340693f319a25c75d5852df625f7929658c7a621bf6ab30af13095"
+          }
+        ]
+      },
+      {
+        "run_id": "65a3db70-5bd6-41db-986a-9555e1d34f53",
+        "calls": 66,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "61d461e65f4de46899ecdfd9ad42daf49d765d7f3cf014a8d35990b26c963543"
+          },
+          {
+            "name": "verification-v0.5-20261027T013135995578Z-82e5345927ce4668817a6b993d49749e.json",
+            "sha256": "61d461e65f4de46899ecdfd9ad42daf49d765d7f3cf014a8d35990b26c963543"
+          }
+        ]
+      },
+      {
+        "run_id": "c00ce4e8-a81f-4a28-b19b-5cf63c08c032",
+        "calls": 21,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "b6c452dfcdfa79f8f9e8295e98e44a9cde0dcaf62d932eb5f10f3e10b34b1dfe"
+          },
+          {
+            "name": "verification-v0.5-20261027T014057962514Z-de7a3e0b803041aca0313269ace14979.json",
+            "sha256": "b6c452dfcdfa79f8f9e8295e98e44a9cde0dcaf62d932eb5f10f3e10b34b1dfe"
+          }
+        ]
+      },
+      {
+        "run_id": "cd602a06-aa4c-4155-932e-e3b0f69f760a",
+        "calls": 4,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "79fbc8685f697bec11d138305430c237eb9d541d1a696b29123e772d49cb1fd0"
+          }
+        ]
+      },
+      {
+        "run_id": "legacy-c698722bf8ddb7522689310ba501b254b75beaf0ac2a15db76e69553c813247a",
+        "calls": 68,
+        "reports": [
+          {
+            "name": "verification-v0.5-20261026T110135547819Z-3008a6e8f79146d28a4f8bcb5b556d74.json",
+            "sha256": "66bc3fa92ff994a1e231abe211b88c74575bdeefd8767384495300d269a33207"
+          }
+        ]
+      },
+      {
+        "run_id": "legacy-ee2c904fc697574595bad020230f9e04eb0301443819885cfd21e23ebf0d4440",
+        "calls": 74,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "2f0431164476b0b2b7ebb3b93658c32e21fa65892819b604c5fa3964760b12f0"
+          },
+          {
+            "name": "verification-v0.5-20261027T010729000056Z-728f655785b543fcb07d8de7738b0b1c.json",
+            "sha256": "2f0431164476b0b2b7ebb3b93658c32e21fa65892819b604c5fa3964760b12f0"
+          }
+        ]
+      }
+    ],
+    "counting": "durable precharge; failures and interrupted reservations remain charged; not a billing claim"
+  },
+  "cloud_calls": 2,
+  "finished_at": "2026-10-27T01:51:58.869045+00:00",
+  "temporary_schemas_removed": true,
+  "cumulative_budget": {
+    "version": "reflection-qa-budget-v1",
+    "scope": "reflection-v0.5-frozen-synthetic-acceptance",
+    "fixture_sha256": "aa9fc19fd4e167491d11d3e434a603e9f258c6232cc686a464c11b1df9be59da",
+    "cumulative_limit": 238,
+    "charged_calls": 238,
+    "remaining_calls": 0,
+    "over_limit": false,
+    "reserved_pending_calls": 0,
+    "provider_usage": {
+      "known_input_tokens": 737604,
+      "known_output_tokens": 63007,
+      "complete": false
+    },
+    "historical_runs": 6,
+    "backfill_runs": [
+      {
+        "run_id": "3a5ac297-e81d-4b2b-af50-9b61ed76326b",
+        "calls": 3,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "275d45fe29340693f319a25c75d5852df625f7929658c7a621bf6ab30af13095"
+          },
+          {
+            "name": "verification-v0.5-20261027T015038897328Z-375cc913c4e248d3aad3b2cc1a2181af.json",
+            "sha256": "275d45fe29340693f319a25c75d5852df625f7929658c7a621bf6ab30af13095"
+          }
+        ]
+      },
+      {
+        "run_id": "65a3db70-5bd6-41db-986a-9555e1d34f53",
+        "calls": 66,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "61d461e65f4de46899ecdfd9ad42daf49d765d7f3cf014a8d35990b26c963543"
+          },
+          {
+            "name": "verification-v0.5-20261027T013135995578Z-82e5345927ce4668817a6b993d49749e.json",
+            "sha256": "61d461e65f4de46899ecdfd9ad42daf49d765d7f3cf014a8d35990b26c963543"
+          }
+        ]
+      },
+      {
+        "run_id": "c00ce4e8-a81f-4a28-b19b-5cf63c08c032",
+        "calls": 21,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "b6c452dfcdfa79f8f9e8295e98e44a9cde0dcaf62d932eb5f10f3e10b34b1dfe"
+          },
+          {
+            "name": "verification-v0.5-20261027T014057962514Z-de7a3e0b803041aca0313269ace14979.json",
+            "sha256": "b6c452dfcdfa79f8f9e8295e98e44a9cde0dcaf62d932eb5f10f3e10b34b1dfe"
+          }
+        ]
+      },
+      {
+        "run_id": "cd602a06-aa4c-4155-932e-e3b0f69f760a",
+        "calls": 4,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "79fbc8685f697bec11d138305430c237eb9d541d1a696b29123e772d49cb1fd0"
+          }
+        ]
+      },
+      {
+        "run_id": "legacy-c698722bf8ddb7522689310ba501b254b75beaf0ac2a15db76e69553c813247a",
+        "calls": 68,
+        "reports": [
+          {
+            "name": "verification-v0.5-20261026T110135547819Z-3008a6e8f79146d28a4f8bcb5b556d74.json",
+            "sha256": "66bc3fa92ff994a1e231abe211b88c74575bdeefd8767384495300d269a33207"
+          }
+        ]
+      },
+      {
+        "run_id": "legacy-ee2c904fc697574595bad020230f9e04eb0301443819885cfd21e23ebf0d4440",
+        "calls": 74,
+        "reports": [
+          {
+            "name": "verification-v0.5.json",
+            "sha256": "2f0431164476b0b2b7ebb3b93658c32e21fa65892819b604c5fa3964760b12f0"
+          },
+          {
+            "name": "verification-v0.5-20261027T010729000056Z-728f655785b543fcb07d8de7738b0b1c.json",
+            "sha256": "2f0431164476b0b2b7ebb3b93658c32e21fa65892819b604c5fa3964760b12f0"
+          }
+        ]
+      }
+    ],
+    "counting": "durable precharge; failures and interrupted reservations remain charged; not a billing claim"
+  },
+  "process_exit_code": 0
+}

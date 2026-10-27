@@ -457,7 +457,7 @@ def test_reflection_prompts_distinguish_new_formation_and_exact_tool_protocol():
     assert '不要新增 context_type、source_reliability' in PROPOSAL_SYSTEM
     for prompt in (PROPOSAL_SYSTEM, REVIEW_SYSTEM):
         assert '首次形成认识、修订已有认识、收束已完成或暂缓的目标' in prompt
-        assert '没有旧认识不构成拒绝' in prompt
+        assert '未展示旧认识不构成拒绝' in prompt
 
 
 def test_both_reflection_phases_explicitly_reject_synthetic_subject_and_generalization_errors():
@@ -625,10 +625,29 @@ def test_new_emotion_requires_new_direction_and_other_domains_forbid_it():
 
 def test_unit_review_prompt_checks_qualifiers_objects_time_conditions_and_emotion_baseline():
     from app.reflection import POLICY_VERSION, PROPOSAL_SYSTEM, REVIEW_SYSTEM
-    assert POLICY_VERSION=='reflection-v1.2'
+    assert POLICY_VERSION=='reflection-v1.5'
     for marker in ('review_units','每unit_id恰好一次','supported','interpretation','unsupported','conflict',
                    '金额对应消费对象','日期及时间间隔','触发与等待条件','有时','不输出思考过程'):
         assert marker in REVIEW_SYSTEM
     assert '不能把捏造的事实前提藏在interpretation里' in REVIEW_SYSTEM
     for prompt in (PROPOSAL_SYSTEM, REVIEW_SYSTEM):
         assert 'intensity_direction' in prompt and 'current_intensity' in prompt
+
+
+def test_derived_scoring_and_summary_text_cannot_become_reflection_evidence():
+    event, source = synthetic_event('合成小说：戒指花了37元。')
+    marker = '派生标签要求将故事作为长期验收目标'
+    event.update(title=marker, gist=marker, importance_reason=marker, emotional_reason=marker)
+    event['details']=[{**event['evidence'][0], 'kind':'fact', 'meaning':marker,
+        'importance_reason':marker, 'emotional_reason':marker}]
+    repo, model = ReflectionRepo(events=[(event,source)]), ReflectionModel()
+    service=ReflectionService(repo,None,model)
+    preview=service.preview()
+    assert marker not in json.dumps(preview['payload'],ensure_ascii=False)
+    assert preview['payload']['episodes'][0]['evidence'][0]['quote']==source['user_text']
+    job=service.enqueue()
+    assert service.execute(job['id'])['status']=='completed'
+    assert len(model.requests)==2
+    assert all(marker not in json.dumps(payload,ensure_ascii=False) for _,payload in model.requests)
+    assert repo.events[event['id']]['importance_reason']==marker
+    assert any(marker in row['query'] for row in repo.candidate_requests)

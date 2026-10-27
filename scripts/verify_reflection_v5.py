@@ -276,13 +276,16 @@ def inside(args):
     from app.service import MemoryService
     from app.worker import process_one
 
-    selected=[case for case in CASES if not args.cases or case['id'] in args.cases.split(',')]
-    request_limit=8*len(selected)
+    by_id={case['id']:case for case in CASES}
+    selected=[by_id[case_id] for case_id in args.cases.split(',')] if args.cases else list(CASES)
+    arms=('on',) if args.on_only else ('off','on')
+    request_limit=(3 if args.chat_only else 5 if args.on_only else 8)*len(selected)
     report={'version':'0.5','fixture_version':FIXTURE_VERSION,'fixture_sha256':digest(CASES),
         'started_at':datetime.now(timezone.utc).isoformat(),'real_model_requested':args.real_model,
         'verification_run_id':args.verification_run_id,
         'real_vectors_requested':args.local_vectors,'request_limit':request_limit,'selected_cases':[case['id'] for case in selected],
-        'full_suite':len(selected)==12,'cases':[],'failures':[],
+        'full_suite':len(selected)==12 and not args.on_only,'arms':list(arms),
+        'diagnostic_on_only':args.on_only,'baseline_chat_only':args.chat_only,'cases':[],'failures':[],
         'isolation':'random per-case base/off/on schemas; independent temporary journals; synthetic sources only',
         'estimator_version':ESTIMATOR_VERSION,'passed':False}
     if report['fixture_sha256']!=FROZEN_SHA256:
@@ -334,7 +337,10 @@ def inside(args):
             if tool['name']=='propose_reflection':
                 from app.reflection_types import validate_reflection_proposal
                 try:validate_reflection_proposal(result['decision'],json.loads(prompt))
-                except MemoryError as exc:record['validation']=error_record(exc)
+                except MemoryError as exc:
+                    record['validation']=error_record(exc)
+                    if hasattr(exc,'scope_issues'):
+                        record['validation']['scope_issues']=exc.scope_issues
             return result
 
     def protected(repo):
@@ -382,7 +388,7 @@ def inside(args):
                     pass
                 snapshot=protected(base)
                 snapshots=[]
-                for arm in ('off','on'):
+                for arm in arms:
                     repo=new_repo(arm)
                     LabManager._copy_schema(repo,base.settings.db_schema,repo.settings.db_schema)
                     repo.clock.set(base.clock.now())
@@ -391,7 +397,7 @@ def inside(args):
                     prior=repo.self_state(per_domain=100)
                     arm_data={'before':prior}
                     entry['arms'][arm]=arm_data
-                    if arm=='on':
+                    if arm=='on' and not args.chat_only:
                         model=AuditedReflectionModel(repo.settings,call_limit=2,budget=budget) if args.real_model else LabModel()
                         service=ReflectionService(repo,embeddings,model)
                         initial=protected(repo)
@@ -406,7 +412,7 @@ def inside(args):
                         arm_data['cloud_calls']=model.cloud_calls
                         entry['checks']['reflection_preserves_originals_facts_activity']=initial==protected(repo)
                         safe_rejection=(result.get('status')=='failed'
-                            and result.get('error_code')=='reflection_review_rejected'
+                            and result.get('error_code') in ('reflection_review_rejected','reflection_scope_unsupported')
                             and digest(prior)==digest(arm_data['after']))
                         arm_data['reflection_outcome']=('completed' if result.get('status')=='completed'
                             else 'safe_no_update' if safe_rejection else 'failed')
@@ -433,6 +439,7 @@ def inside(args):
                             entry['checks']['repeat_100_no_state_or_call_change']=before_repeat==digest(repo.self_state(per_domain=100)) and calls==after_calls and initial==protected(repo)
                     else:
                         arm_data['after']=prior
+                        if args.chat_only:arm_data['reflection_outcome']='not_run_baseline_chat_diagnostic'
                     model=BudgetedMiniMax(repo.settings,call_limit=3,budget=budget) if args.real_model else LabModel()
                     query=case['query']+' 本轮仅做合成验收，不保存本轮新记录。'
                     answer=MemoryService(repo,embeddings,model).chat(query)
@@ -453,11 +460,13 @@ def inside(args):
                         entry['checks']['new_state_in_actual_context']=not updated or bool(observed.intersection(updated))
                     with repo.pool.connection() as c:
                         arm_data['calls']=c.execute('SELECT phase,status,input_tokens,output_tokens,reflection_run_id FROM model_calls ORDER BY created_at,id').fetchall()
-                entry['checks']['same_snapshot']=snapshots==[snapshot,snapshot]
+                entry['checks']['same_snapshot']=snapshots==[snapshot]*len(arms)
                 changed=bool(entry['arms']['on'].get('reflective_states'))
                 entry['comparison']={'state_change':'changed' if changed else 'unchanged',
                     'quality':'requires_review' if args.real_model else 'mock_not_quality_evidence',
-                    'note':'形成更多状态并不自动表示回答改善；回答与来源供逐例复核。'}
+                    'paired':not args.on_only,
+                    'note':('仅补测开启侧；不能据此推断相对改善，完整历史对照另存。' if args.on_only else
+                        '形成更多状态并不自动表示回答改善；回答与来源供逐例复核。')}
                 entry['passed']=all(entry['checks'].values())
                 if not entry['passed']:
                     report['failures'].append({'case':case['id'],'failed_checks':[key for key,value in entry['checks'].items() if not value]})
@@ -487,6 +496,8 @@ def main():
     parser.add_argument('--real-model',action='store_true')
     parser.add_argument('--local-vectors',action='store_true')
     parser.add_argument('--cases',help='Optional comma-separated frozen case IDs for diagnostic reruns')
+    parser.add_argument('--on-only',action='store_true',help='Diagnostic follow-up only; retains historical paired reports, makes no paired benefit claim')
+    parser.add_argument('--chat-only',action='store_true',help='With --on-only, test baseline answer without running reflection; not a reflection acceptance result')
     parser.add_argument('--cumulative-call-limit',type=int,help=(
         'Explicitly approved ALL-HISTORY total ceiling, persisted across runs. '
         'Omit to retain the existing ceiling (initially 96); never a per-run allowance.'))
@@ -494,6 +505,10 @@ def main():
     args=parser.parse_args()
     if args.cases and (not set(args.cases.split(','))<=set(case['id'] for case in CASES)):
         parser.error('--cases contains an unknown frozen case ID')
+    if args.cases and len(args.cases.split(','))!=len(set(args.cases.split(','))):
+        parser.error('--cases must not repeat frozen case IDs')
+    if args.chat_only and not args.on_only:
+        parser.error('--chat-only requires --on-only and does not evaluate reflection')
     if args.cumulative_call_limit is not None and (not args.real_model or args.cumulative_call_limit<1 or args.inside):
         parser.error('--cumulative-call-limit requires a positive explicit host --real-model total')
     if args.inside:
@@ -529,6 +544,8 @@ def main():
                     '--verification-run-id',args.verification_run_id])
     if args.real_model:command.append('--real-model')
     if args.local_vectors:command.append('--local-vectors')
+    if args.on_only:command.append('--on-only')
+    if args.chat_only:command.append('--chat-only')
     if args.cases:command.extend(['--cases',args.cases])
     result=subprocess.run(command,cwd=root,stdout=subprocess.PIPE,text=True,check=False)
     try:report=json.loads(result.stdout.strip().splitlines()[-1])
