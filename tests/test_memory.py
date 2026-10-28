@@ -147,6 +147,43 @@ def test_journal_failure_does_not_ack_delete(repo,monkeypatch):
     assert repo.get(saved['id'])['text']==saved['text']
 
 
+def test_durable_delete_intent_survives_database_rollback_and_replays_once(repo,monkeypatch):
+    saved=note(repo,'合成删除回滚测试内容')
+    conversation=uuid4()
+    repo.save_answer(conversation,'合成问题','合成回答',[saved['id']],repo.epoch())
+    epoch=repo.epoch()
+    apply_delete=repo._apply_delete
+
+    def fail_after_delete(c,record):
+        apply_delete(c,record)
+        raise RuntimeError('synthetic database failure after deletion')
+
+    with monkeypatch.context() as patch:
+        patch.setattr(repo,'_apply_delete',fail_after_delete)
+        with pytest.raises(RuntimeError,match='synthetic database failure'):
+            repo.forget(saved['id'])
+
+    assert repo.epoch()==epoch
+    assert repo.get(saved['id'])['text']==saved['text']
+    assert len(repo.history(conversation))==2
+    with repo.pool.connection() as c:
+        assert c.execute('SELECT count(*) AS n FROM deletion_ledger').fetchone()['n']==0
+    records=repo.journal.records(required=True)
+    assert len(records)==1 and records[0]['target_id']==str(saved['id'])
+
+    repo.replay_deletions(required=True)
+    replayed_epoch=repo.epoch()
+    assert replayed_epoch>epoch
+    assert repo.listing()['total']==0 and repo.history(conversation)==[]
+    with repo.pool.connection() as c:
+        assert c.execute('SELECT count(*) AS n FROM deletion_ledger').fetchone()['n']==1
+        assert not c.execute("SELECT 1 FROM events WHERE content<>''").fetchone()
+        assert not c.execute('SELECT 1 FROM experiences WHERE deleted_at IS NULL').fetchone()
+    repo.replay_deletions(required=True)
+    assert repo.epoch()==replayed_epoch
+    assert repo.journal.records(required=True)==records
+
+
 def test_expired_future_and_subject_filters(repo):
     note(repo,'过去的温度',valid_from=now()-timedelta(days=2),valid_until=now()-timedelta(days=1))
     note(repo,'未来的温度',valid_from=now()+timedelta(days=1))

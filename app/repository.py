@@ -16,6 +16,7 @@ from app.life_repository import LifeRepository
 from app.episode_repository import EpisodeRepository
 from app.reflection_repository import ReflectionRepository
 from app.clock import SystemClock
+from app.corrections import CorrectionRepository
 from psycopg.types.json import Jsonb
 
 
@@ -29,7 +30,7 @@ def vector_literal(vector):
     return '['+','.join(str(float(v)) for v in vector)+']'
 
 
-class Repository(LifeRepository, EpisodeRepository, ReflectionRepository):
+class Repository(LifeRepository, EpisodeRepository, ReflectionRepository, CorrectionRepository):
     def __init__(self, settings, clock=None):
         self.settings = settings
         self.clock = clock or SystemClock()
@@ -52,9 +53,9 @@ class Repository(LifeRepository, EpisodeRepository, ReflectionRepository):
             if not c.execute("SELECT to_regclass('schema_migrations') AS name").fetchone()['name']:
                 c.execute(Path(__file__).with_name('schema.sql').read_text(), prepare=False)
             version = c.execute('SELECT max(version) AS v FROM schema_migrations').fetchone()['v']
-            if version not in (1, 2, 3, 4, 5, 6):
+            if version not in (1, 2, 3, 4, 5, 6, 7):
                 raise MemoryError('schema_version', '数据库版本不受当前应用支持。', 503)
-            for target in range(version+1,7):
+            for target in range(version+1,8):
                 c.execute(Path(__file__).with_name(f'migration_{target:03}.sql').read_text(), prepare=False)
                 if target==3:
                     from app.text import chunks
@@ -319,7 +320,8 @@ class Repository(LifeRepository, EpisodeRepository, ReflectionRepository):
                   AND (m.deleted_at IS NOT NULL OR NOT m.allow_cloud OR m.valid_from>%s
                        OR (m.valid_until IS NOT NULL AND m.valid_until<=%s)))
                 AND NOT EXISTS (SELECT 1 FROM experiences e WHERE e.id=messages.experience_id
-                    AND (e.deleted_at IS NOT NULL OR NOT e.allow_cloud OR e.context_stale))""" if cloud_only else ''
+                    AND (e.deleted_at IS NOT NULL OR NOT e.allow_cloud OR e.context_stale OR e.correction_history_blocked))
+                AND NOT EXISTS (SELECT 1 FROM episode_corrections x WHERE x.experience_id=messages.experience_id)""" if cloud_only else ''
             rows=c.execute(f"""SELECT role,content,source_ids,created_at,experience_id FROM messages WHERE conversation_id=%s
                 AND created_at>=%s
                 {filter_cloud} ORDER BY id DESC LIMIT %s OFFSET %s""",
@@ -360,7 +362,12 @@ class Repository(LifeRepository, EpisodeRepository, ReflectionRepository):
                 (status,usage.get('input_tokens'),usage.get('output_tokens'),call_id))
 
     def save_answer(self,conversation_id,question,answer,source_ids,expected_epoch,auto_actions=None,retain_turn=True,
-                    experience_description=None,self_updates=None,context_roots=None,episode_proposals=None,rehearsals=None):
+                    experience_description=None,self_updates=None,context_roots=None,episode_proposals=None,rehearsals=None,corrections=None):
+        from app.corrections import validate_correction_appends
+        try:
+            validate_correction_appends(episode_proposals or [],corrections or [])
+        except ValueError as exc:
+            raise MemoryError('memory_decision_invalid','同一事件不能同时纠错并追加，本轮未写入。',502) from exc
         tokens.cache_clear()
         actions=auto_actions or []
         with self.pool.connection() as c:
@@ -382,6 +389,7 @@ class Repository(LifeRepository, EpisodeRepository, ReflectionRepository):
                 if not row or row['deleted_at'] or not row['allow_cloud'] or row['revision']!=action.expected_revision:
                     raise MemoryError('context_changed','要变更的记忆已改变，请重试。',409)
             changes=[]
+            prepared_corrections=self._prepare_corrections(c,corrections or [])
             source_ids=list(source_ids)
             forgotten=set()
             for action in actions:
@@ -424,7 +432,7 @@ class Repository(LifeRepository, EpisodeRepository, ReflectionRepository):
                 changes.append({'operation':action.operation,'id':item['id'],'revision':item['revision'],
                                 'text':item['text'],'kind':item['kind'],'valid_until':item['valid_until']})
             self_changes=[]
-            changed_episodes=any((p.get('target_id') if isinstance(p,dict) else p.target_id) for p in (episode_proposals or []))
+            changed_episodes=bool(corrections) or any((p.get('target_id') if isinstance(p,dict) else p.target_id) for p in (episode_proposals or []))
             committed_epoch=expected_epoch+int(bool(changes or ((self_updates or changed_episodes) and retain_turn and not forgotten)))
             if committed_epoch!=expected_epoch:c.execute('UPDATE system_state SET epoch=%s WHERE id=1',(committed_epoch,))
             source_ids=list(dict.fromkeys(mid for mid in source_ids if mid not in forgotten))
@@ -434,8 +442,10 @@ class Repository(LifeRepository, EpisodeRepository, ReflectionRepository):
                 return {'epoch':committed_epoch,'changes':changes,'history_saved':False,'experience_id':None,'self_changes':[],'episode_ids':[]}
             roots=[('memory',mid) for mid in source_ids]+list(context_roots or [])
             experience_id=self._archive_turn(c,conversation_id,question,answer,experience_description,roots)
+            self._apply_corrections(c, corrections or [], experience_id,prepared_corrections)
             episode_ids=self._save_episodes(c,experience_id,episode_proposals,
                 [rid for kind,rid in roots if kind=='episode'])
+            self._link_correction_episodes(c, corrections or [], episode_ids)
             for action in actions:
                 if action.operation=='update' and action.change_mode=='correction':
                     c.execute('''UPDATE episodes e SET reflection_correction=true WHERE id=ANY(%s::uuid[])

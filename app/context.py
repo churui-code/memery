@@ -234,14 +234,14 @@ class ContextComposer:
 
         selected = {field: [] for field in ('history', 'memory_evidence', 'self_state', 'experience_evidence')}
         for field, index, item, priority in sorted(units, key=lambda row: (-row[3], row[0], row[1])):
-            candidate = deepcopy(item)
+            candidate = item
             if field == 'experience_evidence':
                 candidate, merges = _merge_contained_details(candidate)
                 deduplicated.extend(merges)
                 candidate['sources'] = _detail_sources(candidate['details'])
                 candidate['supported_source_experience_ids'] = sorted({str(detail['experience_id'])
                     for detail in candidate['details'] if detail.get('experience_id')})
-                variants = list(self._variants(candidate))
+                variants = self._variants(candidate)
             else:
                 variants = [candidate]
             accepted = None
@@ -267,7 +267,8 @@ class ContextComposer:
                 history_has_quote = any(str(row.get('experience_id')) == str(detail.get('experience_id'))
                     and row.get('role') == detail.get('role') and detail.get('quote', '') in row.get('content', '')
                     for row in payload['history'])
-                if history_has_quote:
+                # Intake needs exact spans to bind explicit event corrections.
+                if history_has_quote and not tools:
                     covered.add(str(detail['experience_id']))
                     deduplicated.append({'field': 'experience_evidence', 'id': str(item.get('id')),
                         'detail_id': str(detail.get('id')), 'reason': 'quote_already_in_selected_history'})

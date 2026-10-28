@@ -1,5 +1,6 @@
 """End-to-end coordination contracts, using the actual repository and composer."""
 import json
+from copy import deepcopy
 from dataclasses import replace
 
 import pytest
@@ -8,6 +9,33 @@ from psycopg import sql
 from app.errors import MemoryError
 from app.service import MemoryService
 from conftest import FakeEmbeddings
+
+
+@pytest.mark.parametrize('decision', [False, True])
+def test_wire_serialization_preserves_input_and_isolates_returned_messages(decision):
+    from app.source_units import source_units
+    payload = {'system': '合成规则', 'tools': [{'name': 'synthetic'}], 'schema': {'type': 'object'},
+        'current_question': '第一句。第二句。',
+        'history': [{'role': 'user', 'content': '合成旧问题', 'source_ids': ['synthetic-source']}],
+        'memory_evidence': [{'id': 'synthetic-source', 'revision': 1, 'text': '合成事实'}],
+        'experience_evidence': [], 'self_state': []}
+    before = deepcopy(payload)
+    system, contents = MemoryService._wire({'payload': payload}, decision=decision)
+    assert system == before['system'] and payload == before
+    expected = {key: value for key, value in before.items() if key not in ('system', 'tools', 'schema')}
+    expected['current_speaker'] = 'user'
+    if decision:
+        expected['current_question'] = source_units(before['current_question'])
+        assert json.loads(contents) == expected
+    else:
+        expected.pop('history')
+        assert contents[0] == {'role': 'user', 'content': '合成旧问题'}
+        assert contents[-1]['role'] == 'user' and json.loads(contents[-1]['content']) == expected
+        contents[0]['content'] = '改写返回对象'
+        contents.append({'role': 'assistant', 'content': '仅修改返回列表'})
+        assert payload == before
+    assert MemoryService._wire({'payload': payload}, decision=decision) == MemoryService._wire(
+        {'payload': before}, decision=decision)
 
 
 def test_single_item_provider_arrays_keep_strict_element_validation():
@@ -28,8 +56,9 @@ def test_provider_tool_schema_inlines_references_without_removing_title_field():
     assert '$ref' not in json.dumps(schema) and '$defs' not in schema
     assert 'self_updates' in schema['required']
     event = schema['properties']['episodes']['items']
-    assert set(event['required']) == {'title', 'gist'}
-    assert event['anyOf'] == [{'required': ['quote_refs']}, {'required': ['quote']}]
+    assert set(event['required']) == {'title', 'gist', 'quote_refs'}
+    assert 'anyOf' not in event and 'quote' not in event['properties']
+    assert 'occurrence' not in event['properties']
     assert event['properties']['title']['type'] == 'string'
     assert 'quote_refs' in event['properties']['details']['items']['properties']
     assert 'time_quote' in event['properties'] and 'occurred_at' not in event['properties']
@@ -209,11 +238,17 @@ def test_invalid_or_conflicting_reassessment_never_commits_half_a_turn(repo, mod
     service, _ = expanded_service(repo, model, monkeypatch)
     before = counts(repo)
     model.reassessment = forbidden
-    with pytest.raises(MemoryError) as exc:
-        service.chat('那个礼物多少钱？')
-    assert exc.value.code in ('memory_reassessment_invalid', 'memory_evidence_conflict')
+    if 'conflict' in forbidden:
+        with pytest.raises(MemoryError) as exc:
+            service.chat('那个礼物多少钱？')
+        assert exc.value.code == 'memory_evidence_conflict'
+        assert model.requests == []
+    else:
+        result = service.chat('那个礼物多少钱？')
+        assert result['memory_status'] == 'failed' and not result['history_saved']
+        assert result['warnings'] and result['memory_changes'] == []
+        assert len(result['calls']) == 3
     assert counts(repo) == before
-    assert model.requests == []
 
 
 def test_do_not_record_cannot_be_relaxed_by_additional_evidence(repo, model, monkeypatch):
@@ -259,7 +294,8 @@ def test_intake_protocol_failure_retries_once_and_keeps_failed_call(repo, model,
             return {'stop_reason': 'tool_use', 'content': [
                 {'type': 'tool_use', 'name': tool['name'], 'input': []}], 'usage':usage}
         return {'stop_reason': 'tool_use', 'content': [
-            {'type': 'tool_use', 'name': tool['name'], 'input': {'actions': []}}], 'usage': {}}
+            {'type': 'tool_use', 'name': tool['name'],
+             'input': {'actions': [], 'retain_turn': True, 'self_updates': []}}], 'usage': {}}
     monkeypatch.setattr(transport, '_request', request)
     monkeypatch.setattr(model, 'decide_memories', transport.decide_memories)
     result = MemoryService(repo, FakeEmbeddings(), model).chat('合成协议重试经历。')
@@ -385,23 +421,29 @@ def test_intake_retry_reserves_answer_and_blocks_unaffordable_reassessment(repo,
     monkeypatch.setattr(model, 'decide_memories', flaky)
     with repo.pool.connection() as conn:
         previous_calls = conn.execute('SELECT count(*) AS n FROM model_calls').fetchone()['n']
-    with pytest.raises(MemoryError) as exc:
-        service.chat('那个礼物多少钱？')
-    assert exc.value.code == 'model_call_limit'
-    assert len(attempts) == 2 and model.reassessment_requests == [] and model.requests == []
+    result = service.chat('那个礼物多少钱？')
+    assert result['memory_status'] == 'failed' and not result['history_saved']
+    assert len(attempts) == 2 and model.reassessment_requests == [] and len(model.requests) == 1
+    assert len(result['calls']) == 3
     assert counts(repo) == before
     with repo.pool.connection() as conn:
-        assert conn.execute('SELECT count(*) AS n FROM model_calls').fetchone()['n'] == previous_calls + 2
+        assert conn.execute('SELECT count(*) AS n FROM model_calls').fetchone()['n'] == previous_calls + 3
 
 
-def test_invalid_local_quote_is_never_retried(repo, model):
+def test_invalid_local_quote_is_rejected_on_both_proposals_without_writes(repo, model):
     model.decision = {'actions': [{'operation': 'create', 'quote': '输入中没有的原话',
                                   'text': '合成个人事实', 'confidence': 1}]}
     before = counts(repo)
     with pytest.raises(MemoryError) as exc:
         MemoryService(repo, FakeEmbeddings(), model).chat('完全不同的当前输入。')
     assert exc.value.code == 'memory_decision_invalid'
-    assert len(model.decision_requests) == 1 and model.requests == []
+    assert len(model.decision_requests) == 2 and model.requests == []
+    prompts=[json.loads(value) for value in model.decision_requests]
+    assert prompts[0]['current_question']==prompts[1]['current_question']
+    assert prompts[1]['proposal_errors']==[{'code':'action_quote_not_in_current_source','path':['actions','quote']}]
+    with repo.pool.connection() as c:
+        calls=c.execute('SELECT phase,status FROM model_calls').fetchall()
+    assert len(calls)==2 and all(row['phase']=='intake' and row['status']=='memory_decision_invalid' for row in calls)
     assert counts(repo) == before
 
 

@@ -1,5 +1,7 @@
 """Downgrade only the additive v6 structures in isolated migration fixtures."""
 def drop_reflection_schema(c):
+    c.execute('DROP TABLE episode_corrections')
+    c.execute('ALTER TABLE experiences DROP COLUMN correction_history_blocked')
     c.execute('ALTER TABLE self_observations DROP COLUMN generation_type,DROP COLUMN reflection_run_id,DROP COLUMN evidence_manifest')
     c.execute('ALTER TABLE model_calls DROP COLUMN reflection_run_id')
     c.execute('ALTER TABLE model_calls ALTER COLUMN conversation_id SET NOT NULL')

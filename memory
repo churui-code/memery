@@ -109,6 +109,8 @@ def main():
                 result=call('POST','/v1/chat',data)
                 conversation=result['conversation_id']
                 print('她 > '+result['answer'])
+                if result.get('memory_status')=='failed':
+                    print('  [未保存] 本轮记忆整理失败，回答未保存。')
                 for change in result.get('memory_changes',[]):
                     label={'create':'已记住','update':'已更新','forget':'已遗忘'}[change['operation']]
                     print('  ['+label+'] '+(change.get('text') or change['id']))

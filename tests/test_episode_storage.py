@@ -390,7 +390,7 @@ def test_estimator_version_is_audited_and_v4_database_upgrade_is_additive(repo):
     with repo.pool.connection() as c:
         row=c.execute('SELECT * FROM model_calls WHERE id=%s',(call_id,)).fetchone()
         assert row['phase']=='intake' and row['estimator_version'] is None
-        assert c.execute('SELECT max(version) AS version FROM schema_migrations').fetchone()['version']==6
+        assert c.execute('SELECT max(version) AS version FROM schema_migrations').fetchone()['version']==7
 
 
 def test_v3_archive_upgrade_preserves_original_content_and_times_and_backfills_locally(repo):
@@ -431,7 +431,7 @@ def test_v3_archive_upgrade_preserves_original_content_and_times_and_backfills_l
                 assert after[field]==value,field
             assert after['source_hash']==source_hash(user_text,assistant_text)
             assert after['revision']==1
-            assert c.execute('SELECT max(version) AS version FROM schema_migrations').fetchone()['version']==6
+            assert c.execute('SELECT max(version) AS version FROM schema_migrations').fetchone()['version']==7
             assert c.execute('SELECT count(*) AS n FROM episodes').fetchone()['n']==0
     assert repo.backfill_episodes()==1
     assert repo.backfill_episodes()==0

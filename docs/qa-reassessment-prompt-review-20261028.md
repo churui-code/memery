@@ -1,0 +1,11 @@
+# 重评quote_refs协议文案独立审查
+
+2026年10月28日。对照第10批实际provider重评system与当前REASSESS_SYSTEM，差异仅在末段旧quote/occurrence描述及新增输出检查，见 `data/qa/independent-acceptance-20261027/batch11-reassessment-prompt-diff.txt`。
+
+文案现在要求每个episode显式输出顶层quote_refs，覆盖连续完整原文，details/cues及time_quote均受父范围约束；子引用或gist全文不能代替父字段。该要求与实际云schema及来源校验一致，消除了前文禁止quote/occurrence、后文却要求旧格式的冲突。没有发现阻塞问题。
+
+相比第10批冻结快照，仅app/automatic.py哈希改变，model.py、corrections.py、service.py等保持一致；本次没有修改云契约、引用绑定或事务校验。缺失父字段仍拒绝，不由程序从子detail或gist自动补齐。重评不能改变固定事实操作与纠错目标的限制也保留。
+
+本轮审查没有provider或DB调用。第11批计划已落盘，精确复用第10批六条输入与会话分组，SHA256 `b77b6e3dcfba7355fdf24005d3736a93c84b677c1f15a1f18be47bd2acf9109d`；最多六轮/18次，每轮三次、90秒模型超时、240秒整轮期限。等待主修复聊天全套检查通过通知后执行一次，失败不换故事或重跑。
+
+提示词一致性修复不保证模型会遵循。第9批虚假未来承诺、第10批第二次纠错失败仍有效，新快照须独立统计。

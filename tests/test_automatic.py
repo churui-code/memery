@@ -13,7 +13,7 @@ from conftest import FakeEmbeddings
 
 def action(quote='我平时不吃香菜', **changes):
     return {'operation':'create','quote':quote,'text':'用户平时不吃香菜','kind':'preference',
-            'confidence':.99, **changes}
+            'confidence':.99, 'durability_quote':quote, **changes}
 
 
 def chat(repo, model, text='我平时不吃香菜', conversation=None):

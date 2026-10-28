@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>记忆 · 对话</title><link rel="stylesheet" href="/chat-assets/chat.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/chat"><span class="brand-icon">忆</span> MEMORY <span class="local">本地</span></a>
+    <button id="new-chat" class="new-chat" disabled>＋ 开始新对话</button>
+    <div class="sidebar-note"><span class="eyebrow">让对话慢慢积累</span><h2>换个话题，<br>记忆仍在。</h2><p>新对话保留长期记忆。你可以先分享一件事，再开启新对话，看看它会想起什么。</p></div>
+    <div class="connection"><span id="connection-state">○ 尚未连接</span><button id="disconnect" hidden>退出并忘记令牌</button></div>
+    <p class="privacy">连接正式记忆库 · MiniMax 回答<br>对话与记忆保存在本机，回答时按配置发送所需上下文。</p>
+  </aside>
+  <main>
+    <header><div><span class="eyebrow">一个持续的对话</span><h1>对话</h1></div><span class="session" id="session-label">新的开始</span></header>
+    <section id="login" class="login-card">
+      <span class="eyebrow">先连接你的记忆</span><h2>从这里，继续聊。</h2><p>首次输入本地访问令牌，之后在此浏览器自动连接。</p>
+      <form id="login-form"><label for="token">访问令牌</label><div class="login-row"><input id="token" type="password" autocomplete="off" placeholder="粘贴本地访问令牌" required><button id="connect" class="primary">连接并记住</button></div></form>
+      <button id="retry-connect" type="button" hidden>重新连接</button>
+      <p class="hint">令牌保存在此浏览器，可随时退出并忘记。令牌文件：<code>.secrets/api_token</code></p>
+    </section>
+    <section id="chat" hidden>
+      <div id="messages" role="log" aria-label="对话记录" aria-live="polite"></div>
+      <div id="welcome" class="welcome"><div class="spark">✳</div><h2>今天，想聊点什么？</h2><p>一个日常、一段经历，或一个突然想到的问题。</p><div class="suggestions"><button data-prompt="我想和你聊聊今天发生的一件事。">聊聊今天</button><button data-prompt="你还记得哪些关于我的事情？">看看你记得什么</button></div></div>
+      <form id="composer" class="composer"><label class="sr-only" for="message">消息</label><textarea id="message" rows="3" maxlength="8000" placeholder="慢慢说，我在听。" required></textarea><div class="composer-bottom"><label for="recall-mode">回忆方式 <select id="recall-mode"><option value="natural">自然回忆</option><option value="deep">主动查找</option></select></label><button id="send" class="primary" type="submit">发送 ↑</button></div></form>
+      <p class="hint composer-hint">Enter 发送 · Shift + Enter 换行 · 自动记忆已开启</p>
+    </section>
+    <p id="status" role="status" aria-live="polite"></p>
+  </main>
+  <script src="/chat-assets/chat.js" defer></script>
+</body>
+</html>

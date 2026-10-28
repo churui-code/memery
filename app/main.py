@@ -2,11 +2,13 @@ from contextlib import asynccontextmanager
 from typing import Literal
 from typing import Annotated
 from uuid import UUID
+from pathlib import Path
 import secrets
 import logging
 
 from fastapi import Depends,FastAPI,Header,Query,Request,Response
-from fastapi.responses import JSONResponse,RedirectResponse
+from fastapi.responses import FileResponse,JSONResponse,RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPAuthorizationCredentials,HTTPBearer
 from pydantic import AwareDatetime,BaseModel,ConfigDict,Field,field_validator,model_validator
 from psycopg import Error as DatabaseError
@@ -175,7 +177,17 @@ def create_app(settings=None,repo=None,embeddings=None,model=None):
 
     @app.get('/',include_in_schema=False)
     def root():
-        return RedirectResponse('/lab' if settings.lab_enabled else '/docs')
+        return RedirectResponse('/lab' if settings.lab_enabled else '/chat')
+
+    if not settings.lab_enabled:
+        chat_dir=Path(__file__).parent/'static'/'chat'
+        app.mount('/chat-assets',StaticFiles(directory=chat_dir),name='chat-assets')
+
+        @app.get('/chat',include_in_schema=False)
+        def chat_page():
+            return FileResponse(chat_dir/'index.html',headers={'Cache-Control':'no-store',
+                'Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+                'Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff'})
 
     @app.get('/health')
     def health(request:Request):

@@ -110,7 +110,7 @@ class ReflectionService:
         evidence = []
         seen = set()
         for raw in event.get('evidence', []):
-            if raw.get('role') != 'user' or str(raw.get('id')) in seen:
+            if not raw.get('id') or raw.get('role') != 'user' or str(raw.get('id')) in seen:
                 continue
             eid = str(raw['experience_id'])
             if eid not in sources:

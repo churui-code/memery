@@ -32,6 +32,11 @@ class ExperienceDescription(BaseModel):
     occurred_at: AwareDatetime | None = None
     time_quote: str | None = Field(default=None, min_length=1, max_length=300)
 
+    @field_validator('time_quote',mode='before')
+    @classmethod
+    def empty_time_is_unknown(cls,value):
+        return None if value=='' else value
+
     @field_validator('participants','anchors',mode='before')
     @classmethod
     def normalize_lists(cls,value):

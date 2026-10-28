@@ -91,6 +91,11 @@ class EpisodeProposal(QuotedEvidence):
     time_quote: str | None = Field(default=None, min_length=1, max_length=300)
     target_id: UUID | None = Field(default=None, description='仅用于用户明确补充同一事件的内容，须与已提供目标的context_type一致；继续讨论主题、提问或形成看法应新建本轮讨论事件，不设置target_id。')
 
+    @field_validator('time_quote',mode='before')
+    @classmethod
+    def empty_time_is_unknown(cls,value):
+        return None if value=='' else value
+
     @field_validator('details', 'cues', 'participants', mode='before')
     @classmethod
     def normalize_lists(cls, value):
@@ -169,6 +174,12 @@ def normalize_event_time(time_quote, recorded_at):
     return period(day,day,'day')
 
 
+class EpisodeScopeError(ValueError):
+    def __init__(self, code, path):
+        super().__init__(code)
+        self.diagnostics=[{'code':code,'path':path}]
+
+
 def validate_episode_proposals(proposals, current_text, allowed_existing=()):
     allowed = {str(item.get('id') if isinstance(item, dict) else item) for item in allowed_existing}
     existing = {str(item.get('id')): item for item in allowed_existing if isinstance(item, dict)}
@@ -176,7 +187,7 @@ def validate_episode_proposals(proposals, current_text, allowed_existing=()):
     if len(result) > 32:
         raise ValueError('too_many_episodes')
     targets = set()
-    for proposal in result:
+    for index,proposal in enumerate(result):
         scope_start,scope_end=locate_quote(current_text, proposal.quote, proposal.occurrence)
         if proposal.target_id is not None:
             target = str(proposal.target_id)
@@ -187,9 +198,11 @@ def validate_episode_proposals(proposals, current_text, allowed_existing=()):
                 raise ValueError('episode_target_context_type_mismatch')
             targets.add(target)
         if proposal.time_quote and proposal.time_quote not in proposal.quote:
-            raise ValueError('episode_time_outside_event_scope')
-        for evidence in [*proposal.details, *proposal.cues]:
-            start,end=locate_quote(current_text, evidence.quote, evidence.occurrence)
-            if start<scope_start or end>scope_end:
-                raise ValueError('episode_detail_outside_event_scope')
+            raise EpisodeScopeError('episode_time_outside_event_scope',['episodes',index,'time_quote'])
+        for field in ('details','cues'):
+            for child_index,evidence in enumerate(getattr(proposal,field)):
+                start,end=locate_quote(current_text, evidence.quote, evidence.occurrence)
+                if start<scope_start or end>scope_end:
+                    raise EpisodeScopeError('episode_detail_outside_event_scope',
+                                            ['episodes',index,field,child_index,'quote'])
     return result

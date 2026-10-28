@@ -179,7 +179,8 @@ class EpisodeRepository:
             FROM episode_cues u JOIN episode_evidence p ON p.id=u.evidence_id JOIN experiences x ON x.id=p.experience_id
             WHERE u.episode_id=%s ORDER BY u.kind,u.text,u.id''',(episode_id,)).fetchall()
         row['rehearsal_count'] = c.execute('SELECT count(*) AS n FROM episode_rehearsals WHERE episode_id=%s',(episode_id,)).fetchone()['n']
-        return row
+        from app.corrections import sanitize_episode
+        return sanitize_episode(row, self._correction_masks(c,row['source_experience_ids']))
 
     def episode(self, episode_id):
         with self.pool.connection() as c:
@@ -305,9 +306,16 @@ class EpisodeRepository:
                     add(row['id'],'keyword',1/(60+i))
                 cues = c.execute(f'''SELECT u.episode_id,u.kind,u.text,p.quote,
                     (SELECT count(DISTINCT f.episode_id) FROM episode_cues f JOIN episodes z ON z.id=f.episode_id
-                     WHERE f.text=u.text AND z.deleted_at IS NULL AND NOT z.context_stale AND (%s=false OR z.allow_cloud)) AS frequency
+                     JOIN episode_evidence fp ON fp.id=f.evidence_id
+                     WHERE f.text=u.text AND z.deleted_at IS NULL AND NOT z.context_stale AND (%s=false OR z.allow_cloud)
+                     AND NOT EXISTS(SELECT 1 FROM episode_corrections correction
+                         WHERE correction.experience_id=fp.experience_id AND fp.role='user'
+                         AND correction.start_offset<fp.end_offset AND correction.end_offset>fp.start_offset)) AS frequency
                     FROM episode_cues u JOIN episodes e ON e.id=u.episode_id JOIN episode_evidence p ON p.id=u.evidence_id
-                    WHERE {filters} AND (position(lower(u.text) IN lower(%s))>0
+                    WHERE {filters} AND NOT EXISTS(SELECT 1 FROM episode_corrections correction
+                        WHERE correction.experience_id=p.experience_id AND p.role='user'
+                        AND correction.start_offset<p.end_offset AND correction.end_offset>p.start_offset)
+                    AND (position(lower(u.text) IN lower(%s))>0
                      OR (length(%s)>=2 AND position(lower(%s) IN lower(u.text))>0))
                     ORDER BY frequency,e.recorded_at DESC,u.id LIMIT %s''',
                     (cloud_only,*args,query,query,query,limit*4)).fetchall()
@@ -387,7 +395,7 @@ class EpisodeRepository:
         for item in rehearsals or []:
             eid = item.get('episode_id') if isinstance(item,dict) else item
             kind = item.get('kind','discussion') if isinstance(item,dict) else 'discussion'
-            if kind not in ('discussion','confirmation','supplement','continuation'):
+            if kind not in ('discussion','confirmation','supplement','continuation','correction'):
                 raise ValueError('invalid_rehearsal_kind')
             row = c.execute('SELECT * FROM episodes WHERE id=%s FOR UPDATE',(eid,)).fetchone()
             if not row or row['deleted_at'] or row['context_stale'] or not row['allow_cloud']:

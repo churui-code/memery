@@ -25,18 +25,18 @@ def export_reflection_quota(repo):
     with repo.pool.connection() as c:
         repo._state_lock(c)
         version=c.execute('SELECT max(version) AS version FROM schema_migrations').fetchone()['version']
-        if version not in (5,6):raise ValueError('unsupported_quota_source_schema')
+        if version not in (5,6,7):raise ValueError('unsupported_quota_source_schema')
         if version==5:
             return {'version':1,'source_schema':5,'days':[]}
         rows=c.execute('SELECT day,rounds,calls FROM reflection_daily_usage ORDER BY day').fetchall()
-        return {'version':1,'source_schema':6,'days':[
+        return {'version':1,'source_schema':version,'days':[
             {'day':row['day'].isoformat(),'rounds':row['rounds'],'calls':row['calls']} for row in rows]}
 
 
 def merge_reflection_quota(repo,payload):
     """The restored database can never lower any known daily high-water mark."""
     if (not isinstance(payload,dict) or set(payload)!={'version','source_schema','days'}
-        or payload['version']!=1 or payload['source_schema'] not in (5,6)
+        or payload['version']!=1 or payload['source_schema'] not in (5,6,7)
         or not isinstance(payload['days'],list) or len(payload['days'])>100000
         or (payload['source_schema']==5 and payload['days'])):
         raise ValueError('invalid_quota_high_water_mark')
@@ -55,7 +55,7 @@ def merge_reflection_quota(repo,payload):
     with repo.pool.connection() as c:
         repo._state_lock(c)
         version=c.execute('SELECT max(version) AS version FROM schema_migrations').fetchone()['version']
-        if version!=6:raise ValueError('quota_target_requires_schema_six')
+        if version not in (6,7):raise ValueError('quota_target_requires_schema_six_or_seven')
         for entry in entries:
             c.execute('''INSERT INTO reflection_daily_usage(day,rounds,calls) VALUES(%s,%s,%s)
                 ON CONFLICT(day) DO UPDATE SET rounds=GREATEST(reflection_daily_usage.rounds,EXCLUDED.rounds),

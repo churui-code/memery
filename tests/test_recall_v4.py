@@ -8,7 +8,7 @@ import pytest
 
 from app.context import ContextComposer, content_hash, estimate_tokens
 from app.errors import MemoryError
-from app.recall import RecallEngine, activation_components, detail_kind, present_episode
+from app.recall import RecallEngine, activation_components, present_episode
 
 
 NOW = datetime(2026, 10, 26, 12, tzinfo=timezone.utc)
@@ -105,47 +105,53 @@ def test_preview_does_not_rehearse_or_inflate_emotion_on_repeated_reads():
     assert repo.rows == [row]
 
 
-def test_amount_is_dormant_during_normal_recall_but_exact_when_requested():
+@pytest.mark.parametrize('query', ['公园告白', '公园小吃怎么结账', '回顾公园那天的开销'])
+def test_recalled_event_keeps_amounts_without_detail_keywords(query):
     money = detail('小吃一共花了37元', 'amount')
-    action = detail('我单膝跪下，亲了一下你的手', 'action', .9)
+    action = detail('她把外套递给我', 'action', .9)
     row = episode('公园告白', details=[money, action])
-    engine = RecallEngine(Episodes([row]), None)
-    ordinary = engine.preview('公园告白')
-    assert money['quote'] not in str(ordinary['evidence'])
-    assert action['quote'] in str(ordinary['evidence'])
-    exact = engine.preview('公园那天小吃花了多少钱')
-    selected_money = next(d for e in exact['evidence'] for d in e['details'] if d['id'] == money['id'])
-    assert selected_money['quote'] == '小吃一共花了37元'
-    assert selected_money['start'] == money['start'] and selected_money['end'] == money['end']
-    assert exact['evidence'][0]['level'] == 'fragment'
+    repo = Episodes([row])
+    before = deepcopy(repo.rows)
+    result = RecallEngine(repo, None).preview(query)
+    shown = {d['id']: d for d in result['evidence'][0]['details']}
+    assert shown[money['id']] == money
+    assert shown[action['id']] == action
+    assert repo.rows == before
 
 
-def test_explicit_detail_kind_preserves_speech_and_action_in_mixed_amount_unit():
-    quote = '我们花了37元买花，你说我爱你，然后单膝下跪给我戴上戒指。'
+def test_present_episode_preserves_mixed_detail_kinds_without_classifying_text():
+    quote = '买花花了37元，她说慢慢来，然后把花递给我。'
     source = str(uuid4())
-    speech = detail(quote, 'speech', .9, experience_id=source)
-    action = detail(quote, 'action', .9, experience_id=source)
-    amount = detail(quote, 'amount', experience_id=source)
-    row = episode('公园告白', details=[amount, speech, action])
-    assert detail_kind(speech) == 'quote' and detail_kind(action) == 'action'
-    for query, requested in [('当时说了什么原话？', speech), ('当时做了什么动作？', action)]:
-        presented = present_episode(row, query, {'activation_score': .9})
-        assert requested['id'] in presented['required_detail_ids']
-        assert amount['id'] not in {item['id'] for item in presented['details']}
-        packed = ContextComposer().compose(current_input=query, episodic=[presented])
-        evidence = packed['payload']['experience_evidence'][0]
-        assert evidence['details'][0]['quote'] == quote
-        assert len(evidence['details']) == 1
-        assert evidence['required_detail_ids'] == [evidence['details'][0]['id']]
+    details = [detail(quote, kind, experience_id=source) for kind in ('amount', 'speech', 'action', 'fact')]
+    row = episode('买花', details=details)
+    presented = present_episode(row, {'activation_score': .9})
+    assert presented['details'] == details
+    packed = ContextComposer().compose(current_input='回顾那次买花', episodic=[presented])
+    evidence = packed['payload']['experience_evidence'][0]
+    assert len(evidence['details']) == 1
+    assert evidence['details'][0]['quote'] == quote
+    assert evidence['required_detail_ids'] == [evidence['details'][0]['id']]
 
 
-def test_untyped_amount_detection_still_applies_only_to_fallback_details():
-    quote = '在37元花店单膝跪下。'
-    for kind in ('amount', 'money', 'price', 'expense', 'fact', 'other', ''):
-        assert detail_kind({'kind': kind, 'quote': quote}) == 'amount'
-    for kind in ('person', 'place', 'object', 'time', 'sensory'):
-        assert detail_kind({'kind': kind, 'quote': quote}) == kind
-    assert detail_kind({'kind': 'fact', 'quote': '单膝跪下。'}) == 'action'
+def test_recalled_event_does_not_drop_details_beyond_a_fixed_count():
+    details = [detail(f'记录第{index}项。', 'fact', .1) for index in range(12)]
+    row = episode('维修记录', details=details)
+    result = RecallEngine(Episodes([row]), None).preview('维修记录')
+    assert result['evidence'][0]['details'] == details
+    assert result['budget']['estimated_tokens'] <= result['budget']['effective_tokens']
+
+
+def test_retrieved_source_spans_are_omitted_whole_when_budget_is_insufficient():
+    row = episode('维修记录', details=[detail('工单编号A17。', 'fact'),
+        detail('完整维修经过。' * 1000, 'fact')])
+    repo = Episodes([row])
+    before = deepcopy(repo.rows)
+    result = RecallEngine(repo, None).preview('维修记录', budget_tokens=1000)
+    assert result['evidence'] == []
+    assert any(item['id'] == row['id'] and item['reason'] == 'budget' for item in result['omitted'])
+    assert result['payload']['current_question'] == '维修记录'
+    assert result['budget']['estimated_tokens'] <= result['budget']['effective_tokens']
+    assert repo.rows == before
 
 
 def test_two_similar_events_are_marked_ambiguous_not_merged():
@@ -211,6 +217,31 @@ def test_history_turns_are_atomic_and_deduplicated_facts_do_not_use_extra_budget
     assert result['payload']['history'] == []
     assert result['payload']['memory_evidence'] == [fact]
     assert result['deduplicated'][0]['reason'] == 'duplicate_source'
+
+
+@pytest.mark.parametrize('budget,detail_count', [(2000, 1), (24000, 2)])
+def test_composer_keeps_inputs_isolated_for_full_and_compact_evidence(budget, detail_count):
+    required = detail('合成账单是37元。', 'amount')
+    optional = detail('合成长背景。' * 600, 'quote')
+    inputs = {'current_input': '账单是多少？',
+        'history': [{'role': 'user', 'content': '合成旧问题', 'source_ids': ['fact']}],
+        'facts': [{'id': 'fact', 'revision': 1, 'text': '合成事实'}],
+        'episodic': [{'id': 'event', 'revision': 1, 'title': '合成账单', 'gist': '合成经过',
+            'level': 'fragment', 'details': [required, optional], 'required_detail_ids': [required['id']]}]}
+    before = deepcopy(inputs)
+    composer = ContextComposer(budget)
+    result = composer.compose(**inputs)
+    packed = result['payload']
+    assert len(packed['experience_evidence'][0]['details']) == detail_count
+    assert packed['experience_evidence'][0]['details'][0]['quote'] == required['quote']
+    assert inputs == before
+    original_result = deepcopy(result)
+    packed['experience_evidence'][0]['details'][0]['quote'] = '修改返回引文'
+    packed['experience_evidence'][0]['required_detail_ids'].clear()
+    packed['history'][0]['source_ids'].clear()
+    packed['memory_evidence'][0]['text'] = '修改返回事实'
+    assert inputs == before
+    assert composer.compose(**inputs) == original_result
 
 
 def test_relevant_belief_survives_history_and_episode_budget_pressure_whole():

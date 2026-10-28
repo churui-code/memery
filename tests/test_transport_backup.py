@@ -62,7 +62,8 @@ def test_protocol_errors_only_carry_safe_usage_counters(monkeypatch,structured,u
 
 
 @pytest.mark.parametrize('stop,name,proposals,accepted',[
-    ('tool_use','propose_memories',[{'type':'tool_use','name':'propose_memories','input':{'actions':[]}}],True),
+    ('tool_use','propose_memories',[{'type':'tool_use','name':'propose_memories',
+                                  'input':{'actions':[],'retain_turn':True,'self_updates':[]}}],True),
     ('max_tokens','propose_memories',[{'type':'tool_use','name':'propose_memories','input':{'actions':[]}}],False),
     ('tool_use','other',[{'type':'tool_use','name':'other','input':{'actions':[]}}],False),
     ('end_turn','propose_memories',[{'type':'text','text':'记住了'}],False),
@@ -75,7 +76,8 @@ def test_structured_decisions_require_one_complete_expected_tool(monkeypatch,sto
         return httpx.Response(200,json={'stop_reason':stop,'content':proposals})
     monkeypatch.setattr(httpx,'AsyncClient',lambda **kwargs:original(transport=httpx.MockTransport(respond),**kwargs))
     model=MiniMax(replace(Settings(),model_key='dummy'))
-    if accepted:assert model.decide_memories('system','test')['decision']=={'actions':[]}
+    if accepted:
+        assert model.decide_memories('system','test')['decision']=={'actions':[],'retain_turn':True,'self_updates':[]}
     else:
         with pytest.raises(MemoryError):model.decide_memories('system','test')
     assert seen[0]['tool_choice']=={'type':'tool','name':'propose_memories'}

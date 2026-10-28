@@ -42,37 +42,6 @@ def lexical_terms(text):
     return result - {'什么', '记得', '记忆', '一下', '时候', '我们', '那个', '这个', '怎么', '多少'}
 
 
-def detail_intents(query):
-    intents = set()
-    if re.search(r'多少钱|花了|花费|价格|金额|费用|账单|几元|多少元|消费|money|cost|price', query, re.I):
-        intents.add('amount')
-    if re.search(r'原话|原句|说了什么|说的什么|怎么说|那句话|一字|逐字|exact|quote', query, re.I):
-        intents.add('quote')
-    if re.search(r'动作|做了什么|怎么做|单膝|跪|亲吻|亲了|戴上|action', query, re.I):
-        intents.add('action')
-    return intents
-
-
-def detail_kind(detail):
-    kind = str(detail.get('kind', '')).lower()
-    text = detail.get('quote', '')
-    if kind in {'amount', 'money', 'price', 'expense'}:
-        return 'amount'
-    if kind in {'quote', 'speech', 'utterance', 'verbatim', 'phrase'}:
-        return 'quote'
-    if kind in {'action', 'gesture', 'behavior'}:
-        return 'action'
-    # An exact source unit may contain several details. Its incidental price
-    # must not override an explicitly encoded speech, action, place or object.
-    if kind and kind not in {'fact', 'other'}:
-        return kind
-    if re.search(r'\d+(?:\.\d+)?\s*(?:元|块|人民币|美元|圆)|[¥￥$]\s*\d+', text):
-        return 'amount'
-    if re.search(r'单膝|跪|亲吻|亲了|戴上', text):
-        return 'action'
-    return kind
-
-
 def _clamp(value):
     return max(0.0, min(1.0, float(value or 0)))
 
@@ -144,10 +113,8 @@ def activation_components(item, query, at):
         'distinctive_cue': distinctive, 'activation_score': round(min(1.0, score), 6), 'reasons': reasons}
 
 
-def present_episode(item, query, components, mode='natural'):
-    intents = detail_intents(query)
-    query_terms = lexical_terms(query)
-    ranked = []
+def present_episode(item, components):
+    """Present retrieved source spans; the shared composer enforces the budget."""
     details = list(item.get('details', []))
     existing = {(str(value.get('experience_id')), value.get('quote')) for value in details}
     for cue in item.get('cues', []):
@@ -155,25 +122,13 @@ def present_episode(item, query, components, mode='natural'):
             details.append({**cue, 'kind': 'quote' if cue.get('kind') == 'phrase' else cue.get('kind', 'other'),
                 'meaning': '原文中的检索线索', 'importance': item.get('importance', .2),
                 'emotional_salience': 0})
-    for detail in details:
-        quote = detail.get('quote', '')
-        if not quote:
-            continue
-        kind = detail_kind(detail)
-        if kind == 'amount' and 'amount' not in intents:
-            continue
-        matching = bool(query_terms & lexical_terms(quote + ' ' + detail.get('meaning', '')))
-        requested = kind in intents
-        score = (2 if requested else 0) + (1 if matching else 0) + _clamp(detail.get('importance', 0)) + .5 * _clamp(detail.get('emotional_salience', 0))
-        if requested or matching or float(detail.get('importance', 0)) >= .7:
-            ranked.append((score, requested, detail))
-    ranked.sort(key=lambda value: (-value[0], str(value[2].get('id', ''))))
-    chosen = [deepcopy(detail) for _, _, detail in ranked[:8 if mode == 'deep' else 4]]
-    required_ids = [str(detail.get('id', content_hash(detail))) for _, requested, detail in ranked[:8 if mode == 'deep' else 4] if requested]
+    chosen = [deepcopy(detail) for detail in details if detail.get('quote')]
     for detail in chosen:
         detail.setdefault('id', content_hash(detail))
+    # Do not silently replace retrieved evidence with a gist when it cannot fit.
+    required_ids = [str(detail['id']) for detail in chosen]
     if chosen:
-        level = 'fragment' if intents else 'anchor'
+        level = 'fragment'
     elif components['activation_score'] >= .36:
         level = 'gist'
     else:
@@ -284,7 +239,7 @@ class RecallEngine:
                     .5*strength + .3*original['base_activation'] + .12*original['importance'] + .08*original['emotional_salience']), 6))
                 original['time_cue_strength'] = strength
                 original['reasons'].append('bounded_time_cue')
-            if original['relevance'] <= .08 and not re.search(r'那|这|上次|之前|当时|原话', query):
+            if original['relevance'] <= .08 and not re.search(r'那|这|上次|之前|当时|原话|刚才|刚刚|前面', query):
                 continue
             expanded = [activation_components(item, expanded_query, at)
                         for expanded_query in item.get('_expansion_queries', []) if expanded_query.strip()]
@@ -306,11 +261,15 @@ class RecallEngine:
                 if restrict_to_time_windows and not any(in_time_window(item, window) for window in time_windows):
                     continue
                 key = str(item['id'])
-                if key in found:
+                if key in found and 'correction' not in item.get('association_kinds', []):
                     continue
-                value = deepcopy(item)
+                value = deepcopy(found.get(key, item))
                 value['similarity'] = 0
-                comp = activation_components(value, query, at)
+                comp = deepcopy(scored[key]) if key in scored else activation_components(value, query, at)
+                if 'correction' in item.get('association_kinds', []):
+                    comp['relevance'] = max(comp['relevance'], .65)
+                    comp['activation_score'] = max(comp['activation_score'], .62)
+                    comp['reasons'].append('explicit_correction_source')
                 # One hop can help an already matching event. It cannot awaken
                 # an unrelated story solely because both happened in a park.
                 if comp['relevance'] > .08:
@@ -320,7 +279,7 @@ class RecallEngine:
                 found[key], scored[key] = value, comp
         ordered = sorted(found, key=lambda key: (-scored[key]['activation_score'], key))
         selected_ids = [key for key in ordered if eligible(scored[key])][:self.policy.selected_limit]
-        evidence = [present_episode(found[key], query, scored[key], mode) for key in selected_ids]
+        evidence = [present_episode(found[key], scored[key]) for key in selected_ids]
         ambiguities = []
         # Similar cues can identify multiple episodes. Preserve each identity
         # and show uncertainty; never merge their dates, actions or amounts.

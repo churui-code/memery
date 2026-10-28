@@ -304,7 +304,7 @@ def test_real_preference_evolution_keeps_old_experience_recallable(repo,model):
     quote='我现在不喜欢这部电影了，但以前确实喜欢。'
     model.decision={'actions':[{'operation':'update','target_id':str(memory['id']),
         'expected_revision':1,'quote':quote,'text':'用户现在不喜欢这部电影','confidence':.99,
-        'kind':'preference','change_mode':'evolution'}]}
+        'kind':'preference','durability_quote':quote,'change_mode':'evolution'}]}
     talk(repo,model,quote)
     assert not repo.experience(first['experience_id'])['context_stale']
     assert any(row['id']==first['experience_id'] for row in repo.search_experiences('电影'))

@@ -20,7 +20,7 @@ def safe_usage(usage):
             if type(usage.get(key)) is int and 0<=usage[key]<=2147483647}
 
 
-def inline_tool_schema(schema):
+def inline_tool_schema(schema, *, references_only=False):
     """Inline local references for providers that incompletely resolve $defs."""
     definitions = schema.get('$defs', {})
     def visit(value):
@@ -39,10 +39,23 @@ def inline_tool_schema(schema):
         if 'quote' in properties:
             properties['quote_refs'] = {'type': 'array', 'minItems': 1, 'maxItems': 128,
                 'items': {'type': 'string'},
-                'description': '当前原文单元ID，递增无重复；取首末完整连续范围。使用时省略quote/occurrence，详见系统规则。'}
-            properties['quote']['description'] = '逐字连续原文，不能改写；优先用quote_refs。'
+                'description': '连续原文单元ID。'}
             result['required'] = [key for key in result.get('required', []) if key != 'quote']
-            result['anyOf'] = [{'required': ['quote_refs']}, {'required': ['quote']}]
+            if references_only:
+                # One provider representation prevents missing top-level evidence
+                # and conflicting duplicated quote text. Legacy local input still validates.
+                properties.pop('quote')
+                properties.pop('occurrence', None)
+                result['required'].append('quote_refs')
+            else:
+                properties['quote']['description'] = '逐字原话。'
+                result['anyOf'] = [{'required': ['quote_refs']}, {'required': ['quote']}]
+        if 'durability_quote' in properties:
+            result['required'].append('durability_quote')
+        if 'old_quote' in properties:
+            properties['old_quote'] = {'type':'string','minLength':1,'maxLength':8000,
+                'description':'选中旧detail中被否定的准确子串，只取错误主张；服务端定位，勿扩展到其他人物或金额。'}
+            result['required'].append('old_quote')
         if 'time_quote' in properties:
             for key in ('occurred_at', 'occurred_until', 'time_precision'):
                 properties.pop(key, None)
@@ -56,6 +69,63 @@ def inline_tool_schema(schema):
             properties['retain_turn']['description'] = '不留存时为false，experience必须为null，episodes/self_updates/rehearsals=[]；actions仅可含明确要求的forget。'
         return result
     return visit(schema)
+
+
+class CloudContractError(ValueError):
+    def __init__(self, path, code):
+        super().__init__('invalid_cloud_contract')
+        self.diagnostics = [{'code':code, 'path':list(path)}]
+
+
+def validate_cloud_contract(value, schema, path=()):
+    """Collect bounded metadata so one re-proposal can address all field errors."""
+    diagnostics = []
+    def reject(location, code):
+        if len(diagnostics) < 12:
+            diagnostics.append({'code': code, 'path': list(location)})
+    def visit(value, schema, path):
+        if value is None or len(diagnostics) >= 12:
+            return
+        if 'anyOf' in schema:
+            candidates = [branch for branch in schema['anyOf'] if branch.get('type') != 'null']
+            if len(candidates) == 1:
+                schema = candidates[0]
+        if ('enum' in schema and value not in schema['enum']) or schema.get('type') == 'null':
+            reject(path, 'cloud_value_not_allowed')
+            return
+        if schema.get('type') == 'array':
+            # Known provider array wrappers do not change any element's authority.
+            if isinstance(value, dict) and set(value) == {'item'}:
+                value = value['item'] if isinstance(value['item'], list) else [value['item']]
+            if isinstance(value, list):
+                for index, item in enumerate(value):
+                    visit(item, schema.get('items', {}), path+(index,))
+            return
+        if not isinstance(value, dict):
+            return  # Pydantic checks types and ranges after exact quote binding.
+        properties = schema.get('properties', {})
+        no_record = (not path and value.get('retain_turn') is False and type(value.get('actions')) is list
+                     and not value['actions'])
+        discarded = {'experience','episodes','self_updates','rehearsals','corrections'} if no_record else set()
+        for key in schema.get('required', []):
+            if key not in value and key not in discarded:
+                reject(path+(key,), 'cloud_required_field_missing')
+        if 'quote_refs' in properties and ('quote' in value or 'occurrence' in value):
+            reject(path+('quote_refs',), 'cloud_duplicate_quote_representation')
+        if 'old_quote' in properties and 'old_quote' in value and (
+                not isinstance(value['old_quote'], str) or not value['old_quote'].strip()):
+            reject(path+('old_quote',), 'cloud_old_quote_required')
+        if schema.get('additionalProperties') is False and any(key not in properties for key in value):
+            # Unknown model keys can contain private text; never log their names.
+            reject(path+('field',), 'cloud_extra_field_forbidden')
+        for key, child in properties.items():
+            if key in value and key not in discarded:
+                visit(value[key], child, path+(key,))
+    visit(value, schema, path)
+    if diagnostics:
+        error = CloudContractError(diagnostics[0]['path'], diagnostics[0]['code'])
+        error.diagnostics = diagnostics
+        raise error
 
 
 def _reflection_schema(schema, phase, payload):
@@ -94,11 +164,46 @@ def _reflection_schema(schema, phase, payload):
 def structured_tool(phase, payload=None):
     from app.automatic import MemoryDecision, MemoryReassessment
     if phase == 'intake':
+        schema = inline_tool_schema(MemoryDecision.model_json_schema(), references_only=True)
+        if isinstance(payload,dict):
+            fields = schema['properties']['actions']['items']['properties']
+            targets = sorted({str(row['id']) for row in payload.get('memory_evidence',[])})
+            fields['target_id']['description'] = '仅可选择当前memory_evidence中的事实ID，事件ID只用于corrections。'
+            if targets:
+                fields['target_id']['anyOf'][0]['enum'] = targets
+            else:
+                fields['operation']['enum'] = ['create']
+                fields['target_id'] = {'type':'null','description':'没有独立事实目标，不可更新或遗忘事件ID。'}
+            from app.corrections import correction_targets
+            targets = correction_targets(payload)
+            correction = schema['properties']['corrections']['items']
+            coordinates = {'target_id','expected_revision','experience_id','start','end'}
+            correction['properties'] = {key:value for key,value in correction['properties'].items()
+                                        if key not in coordinates}
+            correction['properties']['detail_ref'] = {'type':'string',
+                'description':'从本次correction_targets选择一个已展示用户细节；程序绑定其事件、版本及原文范围，勿自行生成坐标。'}
+            correction['required'] = [key for key in correction['required'] if key not in coordinates] + ['detail_ref']
+            if not targets:
+                schema['properties']['corrections']['maxItems'] = 0
+            else:
+                correction['properties']['detail_ref']['enum'] = list(targets)
         return {'name': 'propose_memories', 'description': '先决定留存，再提出允许的事实与内部状态变更。',
-                'input_schema': inline_tool_schema(MemoryDecision.model_json_schema())}
+                'input_schema': schema}
     if phase == 'reassessment':
+        schema = inline_tool_schema(MemoryReassessment.model_json_schema(), references_only=True)
+        if isinstance(payload,dict):
+            excluded={str(row['target_id']) for row in payload.get('planned_episode_corrections',[])}
+            targets=sorted({str(row['id']) for row in payload.get('experience_evidence',[])
+                            if not row.get('legacy_projection') and str(row['id']) not in excluded})
+            field=schema['properties']['episodes']['items']['properties']['target_id']
+            field['description']='只可追加本轮允许的既有事件；正在纠错的目标不允许追加，纠错证据另建事件。'
+            if targets:
+                field['anyOf'][0]['enum']=targets
+            else:
+                schema['properties']['episodes']['items']['properties']['target_id']={
+                    'type':'null','description':field['description']}
         return {'name': 'reassess_memories', 'description': '根据最终证据重评经历与内部状态，不改变固定事实操作。',
-                'input_schema': inline_tool_schema(MemoryReassessment.model_json_schema())}
+                'input_schema': schema}
     if phase in ('reflection_proposal', 'reflection_review'):
         from app.reflection_types import ReflectionProposal, ReflectionReview
         model = ReflectionProposal if phase == 'reflection_proposal' else ReflectionReview
@@ -151,10 +256,20 @@ class MiniMax:
             raise error from exc
 
     def decide_memories(self,system,prompt):
-        return self._structured(system,prompt,structured_tool('intake'))
+        try:
+            payload=json.loads(prompt)
+        except (ValueError,TypeError):
+            payload=None
+        from app.corrections import correction_targets
+        return self._structured(system,prompt,structured_tool('intake',payload),
+                                correction_sources=correction_targets(payload) if isinstance(payload,dict) else None)
 
     def reassess_memories(self,system,prompt):
-        return self._structured(system,prompt,structured_tool('reassessment'))
+        try:
+            payload=json.loads(prompt)
+        except (ValueError,TypeError):
+            payload=None
+        return self._structured(system,prompt,structured_tool('reassessment',payload))
 
     def propose_reflection(self,system,prompt):
         return self._structured(system,prompt,structured_tool('reflection_proposal', json.loads(prompt)))
@@ -162,17 +277,39 @@ class MiniMax:
     def review_reflection(self,system,prompt):
         return self._structured(system,prompt,structured_tool('reflection_review', json.loads(prompt)))
 
-    def _structured(self,system,prompt,tool):
+    def _structured(self,system,prompt,tool,correction_sources=None):
         data=self._request(system,[{'role':'user','content':prompt}],tool=tool)
         try:
             calls=[block for block in data['content'] if block.get('type')=='tool_use']
             if data.get('stop_reason')!='tool_use' or len(calls)!=1 or calls[0]['name']!=tool['name']:
                 raise ValueError('invalid_tool')
             if not isinstance(calls[0]['input'],dict):raise ValueError('invalid_input')
-            return {'decision':calls[0]['input'],'usage':data.get('usage',{})}
+            if tool['name'] in ('propose_memories','reassess_memories'):
+                validate_cloud_contract(calls[0]['input'],tool['input_schema'])
+            decision = calls[0]['input']
+            no_record = (decision.get('retain_turn') is False and type(decision.get('actions')) is list
+                         and not decision['actions'])
+            if correction_sources is not None and decision.get('corrections') and not no_record:
+                from copy import deepcopy
+                decision = deepcopy(decision)
+                rows = decision['corrections']
+                if isinstance(rows,dict) and set(rows)=={'item'}:
+                    rows = rows['item'] if isinstance(rows['item'],list) else [rows['item']]
+                    decision['corrections'] = rows
+                if isinstance(rows,list):
+                    for index,row in enumerate(rows):
+                        if not isinstance(row,dict):
+                            continue  # Typed validation rejects malformed elements.
+                        ref = row.pop('detail_ref', None)
+                        if not isinstance(ref,str) or ref not in correction_sources:
+                            raise CloudContractError(('corrections',index,'detail_ref'),'cloud_value_not_allowed')
+                        row.update({key:value for key,value in correction_sources[ref].items() if key!='quote'})
+            return {'decision':decision,'usage':data.get('usage',{})}
         except (ValueError,KeyError,TypeError) as exc:
             error=MemoryError('memory_decision_invalid','M3 未返回有效记忆判断；本轮未写入。',502)
             error.usage=safe_usage(data.get('usage') if isinstance(data,dict) else None)
+            if isinstance(exc,CloudContractError):
+                error.diagnostics=exc.diagnostics
             raise error from exc
 
     def _request(self, system, messages,tool=None):

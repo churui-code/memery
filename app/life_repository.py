@@ -177,7 +177,7 @@ class LifeRepository:
         filters = 'e.deleted_at IS NULL'
         args = []
         if cloud_only:
-            filters += ' AND e.allow_cloud'
+            filters += ' AND e.allow_cloud AND NOT e.correction_history_blocked AND NOT EXISTS(SELECT 1 FROM episode_corrections x WHERE x.experience_id=e.id)'
         if not include_stale:
             filters += ' AND NOT e.context_stale'
         if time_basis not in ('recorded_at','occurred_at'):
